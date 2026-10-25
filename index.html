@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leandro Morales Perfumería - Perfumería de Lujo</title>
-    <!-- Tailwind CSS -->
+    <title>Leandro Morales Perfumería - Perfumería de Autor</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -41,6 +41,73 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Firebase JS SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            // Fallback config if environment variable is not set
+            apiKey: "demo",
+            authDomain: "demo.firebaseapp.com",
+            projectId: "demo",
+            storageBucket: "demo.appspot.com",
+            messagingSenderId: "123456",
+            appId: "1:123456:web:123456"
+        };
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'leandro-morales-app';
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        window.firebaseDb = db;
+        window.firebaseAppId = appId;
+
+        // Synchronize WhatsApp configuration globally
+        async function initCloudSync() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // Reference to shared config document
+                const configDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
+
+                // Real-time listener for WhatsApp number across all devices
+                onSnapshot(configDocRef, (docSnap) => {
+                    if (docSnap.exists() && docSnap.data().whatsappNumber) {
+                        window.whatsappNumber = docSnap.data().whatsappNumber;
+                        const phoneInput = document.getElementById('admin-phone-input');
+                        if (phoneInput) phoneInput.value = window.whatsappNumber;
+                    }
+                }, (error) => {
+                    console.error("Cloud sync error:", error);
+                });
+            } catch (err) {
+                console.warn("Cloud authentication or sync bypassed:", err);
+            }
+        }
+
+        window.saveWhatsAppToCloud = async function(number) {
+            if (!auth.currentUser) return;
+            try {
+                const configDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
+                await setDoc(configDocRef, { whatsappNumber: number }, { merge: true });
+            } catch (err) {
+                console.error("Error saving WhatsApp number to cloud:", err);
+            }
+        };
+
+        initCloudSync();
+    </script>
+
+    <!-- SQL.js para soporte de Base de Datos SQL cliente -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -80,28 +147,27 @@
 <body class="bg-dark-900 text-gray-200 antialiased selection:bg-gold-500 selection:text-black">
 
     <!-- HEADER / NAVIGATION -->
-    <header class="fixed top-0 left-0 w-full z-40 bg-dark-900/80 backdrop-blur-md border-b border-dark-700">
+    <header class="fixed top-0 left-0 w-full z-40 bg-dark-900/90 backdrop-blur-md border-b border-dark-700">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-20">
+            <div class="flex items-center justify-between h-16 sm:h-20">
                 <!-- Brand Logo -->
-                <a href="#" class="flex items-center gap-3">
-                    <span class="w-10 h-10 rounded-full gold-gradient-bg flex items-center justify-center text-dark-900 font-serif-title font-bold text-xl shadow-lg shadow-gold-500/20">L</span>
+                <a href="#" class="flex items-center gap-2.5 sm:gap-3">
+                    <span class="w-8 h-8 sm:w-10 sm:h-10 rounded-full gold-gradient-bg flex items-center justify-center text-dark-900 font-serif-title font-bold text-lg sm:text-xl shadow-lg shadow-gold-500/20 shrink-0">L</span>
                     <div class="flex flex-col">
-                        <span class="font-serif-title text-xl font-bold tracking-widest text-white">LEANDRO <span class="gold-gradient-text">MORALES</span></span>
-                        <span class="text-[9px] tracking-[0.3em] uppercase text-gray-400">Perfumería de Autor</span>
+                        <span class="font-serif-title text-base sm:text-xl font-bold tracking-widest text-white leading-tight">LEANDRO <span class="gold-gradient-text">MORALES</span></span>
+                        <span class="text-[8px] sm:text-[9px] tracking-[0.25em] sm:tracking-[0.3em] uppercase text-gray-400">Perfumería de Autor</span>
                     </div>
                 </a>
 
                 <!-- Desktop Nav Links -->
-                <nav class="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide">
-                    <a href="#catalogo" class="hover:text-gold-400 transition-colors">Catálogo</a>
-                    <a href="#servicios" class="hover:text-gold-400 transition-colors">Experiencia Exclusiva</a>
-                    <a href="#nosotros" class="hover:text-gold-400 transition-colors">Por Qué Elegirnos</a>
-                    <a href="#contacto" class="hover:text-gold-400 transition-colors">Contacto</a>
+                <nav class="hidden lg:flex items-center gap-8 text-sm font-medium tracking-wide">
+                    <a href="#catalogo" class="hover:text-gold-400 transition-colors py-2">Catálogo</a>
+                    <a href="#servicios" class="hover:text-gold-400 transition-colors py-2">Experiencia Exclusiva</a>
+                    <a href="#contacto" class="hover:text-gold-400 transition-colors py-2">Contacto</a>
                 </nav>
 
                 <!-- Action Button & Cart -->
-                <div class="hidden md:flex items-center gap-4">
+                <div class="hidden lg:flex items-center gap-4">
                     <button onclick="toggleCartModal()" class="relative p-2.5 rounded-full bg-dark-800 hover:bg-dark-700 border border-dark-600 text-gold-400 transition-all">
                         <i class="fa-solid fa-cart-shopping text-lg"></i>
                         <span id="cart-badge" class="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">0</span>
@@ -111,62 +177,61 @@
                     </a>
                 </div>
 
-                <!-- Mobile Menu Button -->
-                <div class="md:hidden flex items-center gap-3">
-                    <button onclick="toggleCartModal()" class="relative p-2 rounded-full bg-dark-800 text-gold-400">
+                <!-- Mobile & Tablet Menu Button -->
+                <div class="lg:hidden flex items-center gap-2 sm:gap-3">
+                    <button onclick="toggleCartModal()" class="relative p-2.5 rounded-full bg-dark-800 text-gold-400 border border-dark-700 min-w-[40px] min-h-[40px] flex items-center justify-center">
                         <i class="fa-solid fa-cart-shopping"></i>
                         <span id="mobile-cart-badge" class="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span>
                     </button>
-                    <button id="mobile-menu-btn" class="text-gray-300 hover:text-white p-2 text-xl focus:outline-none">
+                    <button id="mobile-menu-btn" aria-label="Abrir menú" class="text-gray-300 hover:text-white p-2.5 text-xl focus:outline-none min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg bg-dark-800 border border-dark-700">
                         <i class="fa-solid fa-bars"></i>
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Mobile Menu Dropdown -->
-        <div id="mobile-menu" class="hidden md:hidden bg-dark-800 border-b border-dark-700 px-4 pt-2 pb-6 space-y-3 text-center">
-            <a href="#catalogo" class="block py-2 text-gray-300 hover:text-gold-400">Catálogo</a>
-            <a href="#servicios" class="block py-2 text-gray-300 hover:text-gold-400">Experiencia Exclusiva</a>
-            <a href="#nosotros" class="block py-2 text-gray-300 hover:text-gold-400">Por Qué Elegirnos</a>
-            <a href="#contacto" class="block py-2 text-gray-300 hover:text-gold-400">Contacto</a>
+        <!-- Mobile / Tablet Menu Dropdown -->
+        <div id="mobile-menu" class="hidden lg:hidden bg-dark-800 border-b border-dark-700 px-4 pt-3 pb-6 space-y-2 text-center text-sm font-medium">
+            <a href="#catalogo" onclick="closeMobileMenu()" class="block py-2.5 text-gray-300 hover:text-gold-400 hover:bg-dark-700/50 rounded-lg">Catálogo</a>
+            <a href="#servicios" onclick="closeMobileMenu()" class="block py-2.5 text-gray-300 hover:text-gold-400 hover:bg-dark-700/50 rounded-lg">Experiencia Exclusiva</a>
+            <a href="#contacto" onclick="closeMobileMenu()" class="block py-2.5 text-gray-300 hover:text-gold-400 hover:bg-dark-700/50 rounded-lg">Contacto</a>
         </div>
     </header>
 
     <!-- HERO SECTION -->
-    <section class="relative pt-32 pb-20 md:pt-44 md:pb-32 overflow-hidden">
-        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gold-600/15 rounded-full blur-[120px] pointer-events-none"></div>
+    <section class="relative pt-24 pb-14 sm:pt-32 sm:pb-20 md:pt-40 md:pb-28 overflow-hidden">
+        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 sm:w-96 h-72 sm:h-96 bg-gold-600/15 rounded-full blur-[100px] sm:blur-[120px] pointer-events-none"></div>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="grid md:grid-cols-2 gap-12 items-center">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-center">
                 
-                <div class="text-center md:text-left space-y-6">
-                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-400 text-xs font-semibold uppercase tracking-wider">
-                        <i class="fa-solid fa-crown text-xs"></i> Colección Privada 2026
+                <div class="text-center md:text-left space-y-4 sm:space-y-6">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-400 text-[11px] sm:text-xs font-semibold uppercase tracking-wider">
+                        <i class="fa-solid fa-crown text-[10px] sm:text-xs"></i> Colección Privada 2026
                     </div>
-                    <h1 class="font-serif-title text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight text-white">
+                    <h1 class="font-serif-title text-3xl sm:text-5xl lg:text-6xl font-bold leading-tight sm:leading-tight text-white">
                         La distinción invisible de tu <span class="gold-gradient-text">presencia</span>.
                     </h1>
-                    <p class="text-gray-400 text-base sm:text-lg max-w-xl mx-auto md:mx-0 font-light leading-relaxed">
+                    <p class="text-gray-400 text-sm sm:text-base lg:text-lg max-w-xl mx-auto md:mx-0 font-light leading-relaxed">
                         Fragancias exclusivas elaboradas con los extractos más puros y escasos del mundo. Diseñadas para dejar una huella imborrable.
                     </p>
-                    <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start pt-2">
-                        <a href="#catalogo" class="gold-gradient-bg text-dark-900 px-8 py-3.5 rounded-full font-bold text-base hover:shadow-lg hover:shadow-gold-500/20 transition-all text-center">
+                    <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start pt-2">
+                        <a href="#catalogo" class="gold-gradient-bg text-dark-900 px-6 sm:px-8 py-3.5 rounded-full font-bold text-sm sm:text-base hover:shadow-lg hover:shadow-gold-500/20 transition-all text-center">
                             Ver Catálogo Exclusivo
                         </a>
-                        <a href="#contacto" class="border border-gold-500/40 hover:border-gold-400 text-gold-400 hover:bg-gold-500/10 px-8 py-3.5 rounded-full font-medium text-base transition-all text-center">
+                        <a href="#contacto" class="border border-gold-500/40 hover:border-gold-400 text-gold-400 hover:bg-gold-500/10 px-6 sm:px-8 py-3.5 rounded-full font-medium text-sm sm:text-base transition-all text-center">
                             Asesoría Personalizada
                         </a>
                     </div>
                 </div>
 
                 <!-- Hero Image Showcase -->
-                <div class="relative flex justify-center">
-                    <div class="relative w-full max-w-md aspect-square rounded-3xl overflow-hidden glass-card p-4">
-                        <img src="https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=800&auto=format&fit=crop" alt="Perfume Luxury Aura" class="w-full h-full object-cover rounded-2xl shadow-2xl">
-                        <div class="absolute bottom-8 left-8 right-8 p-4 rounded-xl glass-card border border-gold-500/30 backdrop-blur-md">
-                            <p class="text-xs uppercase tracking-widest text-gold-400 font-semibold">Fragancia de la Semana</p>
-                            <p class="font-serif-title text-lg font-bold text-white">Ébano & Amber Royal</p>
-                            <p class="text-xs text-gray-300">Notas de Ámbar, Oud Dorado & Cardamomo</p>
+                <div class="relative flex justify-center mt-4 md:mt-0">
+                    <div class="relative w-full max-w-xs sm:max-w-md aspect-square rounded-2xl sm:rounded-3xl overflow-hidden glass-card p-3 sm:p-4">
+                        <img src="https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=800&auto=format&fit=crop" alt="Perfume Luxury Aura" class="w-full h-full object-cover rounded-xl sm:rounded-2xl shadow-2xl">
+                        <div class="absolute bottom-4 left-4 right-4 sm:bottom-8 sm:left-8 sm:right-8 p-3 sm:p-4 rounded-xl glass-card border border-gold-500/30 backdrop-blur-md">
+                            <p class="text-[10px] sm:text-xs uppercase tracking-widest text-gold-400 font-semibold">Fragancia de la Semana</p>
+                            <p class="font-serif-title text-base sm:text-lg font-bold text-white">Ébano & Amber Royal</p>
+                            <p class="text-[11px] sm:text-xs text-gray-300">Notas de Ámbar, Oud Dorado & Cardamomo</p>
                         </div>
                     </div>
                 </div>
@@ -176,102 +241,102 @@
     </section>
 
     <!-- PRODUCT CATALOG SECTION -->
-    <section id="catalogo" class="py-20 bg-dark-800/50 relative border-t border-dark-700">
+    <section id="catalogo" class="py-12 sm:py-20 bg-dark-800/50 relative border-t border-dark-700">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-3xl mx-auto mb-12">
-                <h2 class="font-serif-title text-3xl sm:text-4xl font-bold text-white mb-4">Nuestra Selección de <span class="gold-gradient-text">Alta Perfumería</span></h2>
-                <p class="text-gray-400 text-sm sm:text-base">Explora las creaciones más codiciadas de nuestra casa perfumista.</p>
+            <div class="text-center max-w-3xl mx-auto mb-8 sm:mb-12">
+                <h2 class="font-serif-title text-2xl sm:text-4xl font-bold text-white mb-3 sm:mb-4">Nuestra Selección de <span class="gold-gradient-text">Alta Perfumería</span></h2>
+                <p class="text-gray-400 text-xs sm:text-base">Explora las creaciones más codiciadas de nuestra casa perfumista.</p>
                 
                 <!-- Category Filters -->
-                <div class="flex flex-wrap justify-center gap-3 mt-8">
-                    <button onclick="filterProducts('todos', event)" class="filter-btn active px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-gold-500 text-dark-900 transition-all">Todos</button>
-                    <button onclick="filterProducts('oriental', event)" class="filter-btn px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-dark-700 text-gray-300 hover:text-white transition-all">Orientales</button>
-                    <button onclick="filterProducts('floral', event)" class="filter-btn px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-dark-700 text-gray-300 hover:text-white transition-all">Florales Nobless</button>
-                    <button onclick="filterProducts('fresco', event)" class="filter-btn px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-dark-700 text-gray-300 hover:text-white transition-all">Cítricos Frescos</button>
+                <div class="flex flex-wrap justify-center gap-2 sm:gap-3 mt-6 sm:mt-8">
+                    <button onclick="filterProducts('todos', event)" class="filter-btn active px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-gold-500 text-dark-900 transition-all min-h-[38px]">Todos</button>
+                    <button onclick="filterProducts('oriental', event)" class="filter-btn px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-dark-700 text-gray-300 hover:text-white transition-all min-h-[38px]">Orientales</button>
+                    <button onclick="filterProducts('floral', event)" class="filter-btn px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-dark-700 text-gray-300 hover:text-white transition-all min-h-[38px]">Florales Nobles</button>
+                    <button onclick="filterProducts('fresco', event)" class="filter-btn px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-dark-700 text-gray-300 hover:text-white transition-all min-h-[38px]">Cítricos Frescos</button>
                 </div>
             </div>
 
             <!-- Product Grid -->
-            <div id="product-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                 <!-- Products injected dynamically via JavaScript -->
             </div>
         </div>
     </section>
 
     <!-- SERVICES SECTION -->
-    <section id="servicios" class="py-20 relative">
+    <section id="servicios" class="py-12 sm:py-20 relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-3xl mx-auto mb-16">
-                <h2 class="font-serif-title text-3xl sm:text-4xl font-bold text-white mb-4">Servicios <span class="gold-gradient-text">Exclusivos</span></h2>
-                <p class="text-gray-400">Elevamos la compra de tu fragancia a una experiencia sensorial única.</p>
+            <div class="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
+                <h2 class="font-serif-title text-2xl sm:text-4xl font-bold text-white mb-3 sm:mb-4">Servicios <span class="gold-gradient-text">Exclusivos</span></h2>
+                <p class="text-gray-400 text-xs sm:text-base">Elevamos la compra de tu fragancia a una experiencia sensorial única.</p>
             </div>
 
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="glass-card p-8 rounded-2xl transition-all duration-300 hover:-translate-y-2">
-                    <div class="w-14 h-14 rounded-xl gold-gradient-bg flex items-center justify-center text-dark-900 text-2xl mb-6 shadow-lg shadow-gold-500/20">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                <div class="glass-card p-6 sm:p-8 rounded-2xl transition-all duration-300 hover:-translate-y-1 sm:hover:-translate-y-2">
+                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl gold-gradient-bg flex items-center justify-center text-dark-900 text-xl sm:text-2xl mb-4 sm:mb-6 shadow-lg shadow-gold-500/20">
                         <i class="fa-solid fa-wand-magic-sparkles"></i>
                     </div>
-                    <h3 class="font-serif-title text-xl font-bold text-white mb-3">Bespoke Perfumery</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">Creación de fragancias exclusivas y personalizadas adaptadas a la química de tu piel y preferencias de personalidad.</p>
+                    <h3 class="font-serif-title text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3">Bespoke Perfumery</h3>
+                    <p class="text-gray-400 text-xs sm:text-sm leading-relaxed">Creación de fragancias exclusivas y personalizadas adaptadas a la química de tu piel y preferencias de personalidad.</p>
                 </div>
 
-                <div class="glass-card p-8 rounded-2xl transition-all duration-300 hover:-translate-y-2">
-                    <div class="w-14 h-14 rounded-xl gold-gradient-bg flex items-center justify-center text-dark-900 text-2xl mb-6 shadow-lg shadow-gold-500/20">
+                <div class="glass-card p-6 sm:p-8 rounded-2xl transition-all duration-300 hover:-translate-y-1 sm:hover:-translate-y-2">
+                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl gold-gradient-bg flex items-center justify-center text-dark-900 text-xl sm:text-2xl mb-4 sm:mb-6 shadow-lg shadow-gold-500/20">
                         <i class="fa-solid fa-box-tissue"></i>
                     </div>
-                    <h3 class="font-serif-title text-xl font-bold text-white mb-3">Muestras VIP a Domicilio</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">Recibe en tu hogar nuestro cofre de descubrimiento con 5 elixires antes de decidir tu frasco definitivo.</p>
+                    <h3 class="font-serif-title text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3">Muestras VIP a Domicilio</h3>
+                    <p class="text-gray-400 text-xs sm:text-sm leading-relaxed">Recibe en tu hogar nuestro cofre de descubrimiento con 5 elixires antes de decidir tu frasco definitivo.</p>
                 </div>
 
-                <div class="glass-card p-8 rounded-2xl transition-all duration-300 hover:-translate-y-2">
-                    <div class="w-14 h-14 rounded-xl gold-gradient-bg flex items-center justify-center text-dark-900 text-2xl mb-6 shadow-lg shadow-gold-500/20">
+                <div class="glass-card p-6 sm:p-8 rounded-2xl transition-all duration-300 hover:-translate-y-1 sm:hover:-translate-y-2 sm:col-span-2 lg:col-span-1">
+                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl gold-gradient-bg flex items-center justify-center text-dark-900 text-xl sm:text-2xl mb-4 sm:mb-6 shadow-lg shadow-gold-500/20">
                         <i class="fa-solid fa-truck-fast"></i>
                     </div>
-                    <h3 class="font-serif-title text-xl font-bold text-white mb-3">Envío Blindado Express</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">Entregas exprés con empaque de lujo térmico y seguro total para garantizar la integridad del perfume.</p>
+                    <h3 class="font-serif-title text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3">Envío Blindado Express</h3>
+                    <p class="text-gray-400 text-xs sm:text-sm leading-relaxed">Entregas exprés con empaque de lujo térmico y seguro total para garantizar la integridad del perfume.</p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- ADMIN MODAL -->
-    <div id="admin-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300 flex items-center justify-center p-4">
-        <div class="w-full max-w-2xl bg-dark-800 rounded-2xl p-6 sm:p-8 border border-gold-500/30 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button onclick="closeAdminPanel()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl p-2">
+    <div id="admin-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300 flex items-center justify-center p-3 sm:p-6">
+        <div class="w-full max-w-2xl bg-dark-800 rounded-2xl p-4 sm:p-8 border border-gold-500/30 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeAdminPanel()" aria-label="Cerrar modal" class="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-white text-xl p-2 rounded-lg hover:bg-dark-700">
                 <i class="fa-solid fa-xmark"></i>
             </button>
-            <div class="text-center mb-8">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-500/10 text-gold-400 text-xs font-semibold uppercase tracking-wider mb-2">
+            <div class="text-center mb-6 sm:mb-8 pr-6">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-500/10 text-gold-400 text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-2">
                     <i class="fa-solid fa-gears"></i> Panel de Control
                 </div>
-                <h2 class="font-serif-title text-2xl sm:text-3xl font-bold text-white">Administración de la Tienda</h2>
+                <h2 class="font-serif-title text-xl sm:text-3xl font-bold text-white">Administración de la Tienda</h2>
             </div>
 
-            <div class="space-y-8">
+            <div class="space-y-6 sm:space-y-8">
                 <!-- WhatsApp Config Box -->
-                <div class="glass-card p-6 rounded-xl">
-                    <h3 class="font-serif-title text-lg font-bold text-gold-400 mb-2 flex items-center gap-2">
+                <div class="glass-card p-4 sm:p-6 rounded-xl">
+                    <h3 class="font-serif-title text-base sm:text-lg font-bold text-gold-400 mb-2 flex items-center gap-2">
                         <i class="fa-brands fa-whatsapp text-green-500"></i> Configuración de WhatsApp
                     </h3>
                     <p class="text-xs text-gray-400 mb-4">Ingresa el número con código de país sin el símbolo "+" (Ej: 5491100000000) para recibir compras directas.</p>
                     <div class="space-y-3">
-                        <input type="text" id="admin-phone-input" placeholder="Ej: 5491100000000" class="w-full bg-dark-900 border border-dark-600 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-gold-400">
-                        <button onclick="saveWhatsAppNumber()" class="w-full gold-gradient-bg text-dark-900 py-2.5 rounded-lg font-bold text-sm hover:opacity-95 transition-all">
+                        <input type="text" id="admin-phone-input" placeholder="Ej: 5491100000000" class="w-full bg-dark-900 border border-dark-600 rounded-lg p-3 text-xs sm:text-sm text-white focus:outline-none focus:border-gold-400">
+                        <button onclick="saveWhatsAppNumber()" class="w-full gold-gradient-bg text-dark-900 py-3 rounded-lg font-bold text-xs sm:text-sm hover:opacity-95 transition-all">
                             Guardar Número
                         </button>
                     </div>
                 </div>
 
                 <!-- Add Product Box -->
-                <div class="glass-card p-6 rounded-xl">
-                    <h3 class="font-serif-title text-lg font-bold text-gold-400 mb-4 flex items-center gap-2">
+                <div class="glass-card p-4 sm:p-6 rounded-xl">
+                    <h3 class="font-serif-title text-base sm:text-lg font-bold text-gold-400 mb-4 flex items-center gap-2">
                         <i class="fa-solid fa-plus-circle"></i> Agregar Nuevo Perfume
                     </h3>
                     <form onsubmit="addNewProduct(event)" class="space-y-3">
                         <div>
                             <input type="text" id="prod-name" placeholder="Nombre del Perfume" required class="w-full bg-dark-900 border border-dark-600 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-gold-400">
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <select id="prod-category" class="bg-dark-900 border border-dark-600 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-gold-400">
                                 <option value="oriental">Oriental</option>
                                 <option value="floral">Floral</option>
@@ -287,19 +352,19 @@
                             <label class="block text-[11px] text-gray-400 font-medium">Imagen del Perfume:</label>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <div>
-                                    <label class="flex flex-col items-center justify-center p-2.5 bg-dark-900 border border-dashed border-dark-600 rounded-lg cursor-pointer hover:border-gold-400 transition-colors text-center">
+                                    <label class="flex flex-col items-center justify-center p-2.5 bg-dark-900 border border-dashed border-dark-600 rounded-lg cursor-pointer hover:border-gold-400 transition-colors text-center min-h-[50px]">
                                         <i class="fa-solid fa-folder-open text-gold-400 text-sm mb-1"></i>
                                         <span id="file-label-text" class="text-[10px] text-gray-300">Subir desde tu equipo</span>
                                         <input type="file" id="prod-file-input" accept="image/*" onchange="handleFileSelect(event)" class="hidden">
                                     </label>
                                 </div>
-                                <input type="url" id="prod-img" placeholder="O pegar URL web de la imagen" class="w-full bg-dark-900 border border-dark-600 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-gold-400 h-full">
+                                <input type="url" id="prod-img" placeholder="O pegar URL web de la imagen" class="w-full bg-dark-900 border border-dark-600 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-gold-400">
                             </div>
                         </div>
                         <div>
                             <textarea id="prod-desc" placeholder="Descripción breve" rows="2" required class="w-full bg-dark-900 border border-dark-600 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-gold-400"></textarea>
                         </div>
-                        <button type="submit" class="w-full bg-gold-600 hover:bg-gold-500 text-dark-900 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all">
+                        <button type="submit" class="w-full bg-gold-600 hover:bg-gold-500 text-dark-900 py-3 rounded-lg font-bold text-xs uppercase tracking-wider transition-all">
                             Publicar Perfume
                         </button>
                     </form>
@@ -309,24 +374,24 @@
     </div>
 
     <!-- FOOTER -->
-    <footer id="contacto" class="bg-dark-900 border-t border-dark-700 pt-16 pb-12">
+    <footer id="contacto" class="bg-dark-900 border-t border-dark-700 pt-12 sm:pt-16 pb-8 sm:pb-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
-                <div class="space-y-4">
-                    <span class="font-serif-title text-xl font-bold tracking-widest text-white">LEANDRO <span class="gold-gradient-text">MORALES</span></span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 mb-10 sm:mb-12">
+                <div class="space-y-3 sm:space-y-4">
+                    <span class="font-serif-title text-lg sm:text-xl font-bold tracking-widest text-white">LEANDRO <span class="gold-gradient-text">MORALES</span></span>
                     <p class="text-xs text-gray-400 leading-relaxed">
                         Alta perfumería de autor. Creaciones olfativas formuladas con ingredientes éticos y sustentables de grado supremo.
                     </p>
                 </div>
                 <div>
-                    <h4 class="font-serif-title text-sm font-bold text-gold-400 mb-4 uppercase tracking-wider">Enlaces Rápidos</h4>
+                    <h4 class="font-serif-title text-xs sm:text-sm font-bold text-gold-400 mb-3 sm:mb-4 uppercase tracking-wider">Enlaces Rápidos</h4>
                     <ul class="space-y-2 text-xs text-gray-400">
-                        <li><a href="#catalogo" class="hover:text-white transition-colors">Catálogo Completo</a></li>
-                        <li><a href="#servicios" class="hover:text-white transition-colors">Servicios Exclusivos</a></li>
+                        <li><a href="#catalogo" class="hover:text-white transition-colors py-1 block">Catálogo Completo</a></li>
+                        <li><a href="#servicios" class="hover:text-white transition-colors py-1 block">Servicios Exclusivos</a></li>
                     </ul>
                 </div>
                 <div>
-                    <h4 class="font-serif-title text-sm font-bold text-gold-400 mb-4 uppercase tracking-wider">Boutiques</h4>
+                    <h4 class="font-serif-title text-xs sm:text-sm font-bold text-gold-400 mb-3 sm:mb-4 uppercase tracking-wider">Boutiques</h4>
                     <ul class="space-y-2 text-xs text-gray-400">
                         <li>París: 24 Rue du Faubourg Saint-Honoré</li>
                         <li>Madrid: Calle de Serrano 42</li>
@@ -334,18 +399,18 @@
                     </ul>
                 </div>
                 <div>
-                    <h4 class="font-serif-title text-sm font-bold text-gold-400 mb-4 uppercase tracking-wider">Atención VIP</h4>
+                    <h4 class="font-serif-title text-xs sm:text-sm font-bold text-gold-400 mb-3 sm:mb-4 uppercase tracking-wider">Atención VIP</h4>
                     <p class="text-xs text-gray-400 mb-3">Atención personalizada y asesoramiento olfativo inmediato.</p>
-                    <button onclick="openWhatsAppChat()" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600/20 text-green-400 border border-green-500/30 text-xs font-semibold hover:bg-green-600/30 transition-all">
+                    <button onclick="openWhatsAppChat()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-green-600/20 text-green-400 border border-green-500/30 text-xs font-semibold hover:bg-green-600/30 transition-all">
                         <i class="fa-brands fa-whatsapp"></i> Contactar por WhatsApp
                     </button>
                 </div>
             </div>
 
-            <div class="pt-8 border-t border-dark-800 flex flex-col sm:flex-row justify-between items-center text-xs text-gray-500 gap-4">
+            <div class="pt-6 sm:pt-8 border-t border-dark-800 flex flex-col sm:flex-row justify-between items-center text-xs text-gray-500 gap-4 text-center sm:text-left">
                 <p>&copy; 2026 Leandro Morales Perfumería. Todos los derechos reservados.</p>
                 <div class="flex items-center gap-4">
-                    <button onclick="openAdminPanel()" class="hover:text-gold-400 transition-colors flex items-center gap-1">
+                    <button onclick="promptAdminPassword()" class="hover:text-gold-400 transition-colors flex items-center gap-1.5 py-1">
                         <i class="fa-solid fa-lock text-[10px]"></i> Administrar Tienda
                     </button>
                 </div>
@@ -355,52 +420,62 @@
 
     <!-- CART MODAL -->
     <div id="cart-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300 flex justify-end">
-        <div class="w-full max-w-md bg-dark-800 h-full p-6 flex flex-col justify-between border-l border-dark-700 shadow-2xl">
+        <div class="w-full max-w-full sm:max-w-md bg-dark-800 h-full p-4 sm:p-6 flex flex-col justify-between border-l border-dark-700 shadow-2xl">
             <div>
                 <div class="flex justify-between items-center pb-4 border-b border-dark-700">
-                    <h3 class="font-serif-title text-xl font-bold text-white flex items-center gap-2">
+                    <h3 class="font-serif-title text-lg sm:text-xl font-bold text-white flex items-center gap-2">
                         <i class="fa-solid fa-cart-shopping text-gold-400"></i> Tu Selección
                     </h3>
-                    <button onclick="toggleCartModal()" class="text-gray-400 hover:text-white text-xl">
+                    <button onclick="toggleCartModal()" aria-label="Cerrar carrito" class="text-gray-400 hover:text-white text-xl p-2 rounded-lg">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
 
-                <div id="cart-items" class="py-4 space-y-4 max-h-[60vh] overflow-y-auto">
+                <div id="cart-items" class="py-4 space-y-3 max-h-[60vh] overflow-y-auto">
                     <!-- Dynamic Cart Items -->
                 </div>
             </div>
 
             <div class="border-t border-dark-700 pt-4 space-y-4">
-                <div class="flex justify-between items-center text-lg font-bold">
+                <div class="flex justify-between items-center text-base sm:text-lg font-bold">
                     <span class="text-gray-300">Total:</span>
                     <span id="cart-total" class="gold-gradient-text">$0</span>
                 </div>
-                <button onclick="sendWhatsAppOrder()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all">
-                    <i class="fa-brands fa-whatsapp text-xl"></i> Confirmar Pedido por WhatsApp
+                <button onclick="sendWhatsAppOrder()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all text-sm sm:text-base">
+                    <i class="fa-brands fa-whatsapp text-lg sm:text-xl"></i> Confirmar Pedido por WhatsApp
                 </button>
             </div>
         </div>
     </div>
 
     <!-- WHATSAPP FLOATING BUTTON -->
-    <div class="fixed bottom-6 left-6 z-50 flex items-center gap-3">
+    <div class="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-50 flex items-center gap-3">
         <div class="relative group">
-            <div class="absolute left-16 bottom-1/2 translate-y-1/2 bg-dark-800 text-white text-xs px-4 py-2.5 rounded-xl border border-gold-500/30 whitespace-nowrap opacity-100 group-hover:opacity-100 transition-opacity shadow-xl flex items-center gap-2 pointer-events-none">
+            <div class="hidden sm:flex absolute left-16 bottom-1/2 translate-y-1/2 bg-dark-800 text-white text-xs px-4 py-2.5 rounded-xl border border-gold-500/30 whitespace-nowrap opacity-100 shadow-xl items-center gap-2 pointer-events-none">
                 <span class="w-2 h-2 rounded-full bg-green-500 animate-ping"></span>
                 <span>Hola, escríbenos para ayudarte</span>
             </div>
 
-            <button onclick="openWhatsAppChat()" class="relative w-14 h-14 bg-green-500 hover:bg-green-400 text-white rounded-full flex items-center justify-center text-2xl shadow-2xl shadow-green-500/40 transition-all hover:scale-105">
+            <button onclick="openWhatsAppChat()" aria-label="Contactar por WhatsApp" class="relative w-12 h-12 sm:w-14 sm:h-14 bg-green-500 hover:bg-green-400 text-white rounded-full flex items-center justify-center text-xl sm:text-2xl shadow-2xl shadow-green-500/40 transition-all hover:scale-105">
                 <i class="fa-brands fa-whatsapp"></i>
-                <span class="pulse-badge absolute -top-1 -right-1 bg-red-600 text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-dark-900">1</span>
+                <span class="pulse-badge absolute -top-1 -right-1 bg-red-600 text-white text-[10px] sm:text-[11px] font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center border-2 border-dark-900">1</span>
             </button>
         </div>
     </div>
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
-        let perfumes = [
+        let perfumes = [];
+        let cart = [];
+        let whatsappNumber = "5491100000000";
+        let uploadedImageBase64 = "";
+
+        // ==========================================
+        // SQL DATABASE (SQL.js SQLite Implementation)
+        // ==========================================
+        let db = null;
+
+        const defaultPerfumes = [
             {
                 id: 1,
                 name: "Ébano & Amber Royal",
@@ -436,131 +511,134 @@
             }
         ];
 
-        let cart = [];
-        let whatsappNumber = "5491100000000";
-        let uploadedImageBase64 = "";
-
-        // ==========================================
-        // INDEXEDDB & LOCALSTORAGE PERSISTENCE LAYER
-        // ==========================================
-        const DB_NAME = 'LeandroMoralesDB';
-        const DB_VERSION = 1;
-        const STORE_NAME = 'app_state';
-        let db = null;
-
-        // Initialize IndexedDB with fallback to LocalStorage
-        function initStorage() {
+        async function initSQLDatabase() {
             try {
-                // First load from LocalStorage to guarantee instant state availability
-                loadFromLocalStorage();
-
-                // Then initialize IndexedDB for dual persistence
-                const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-                request.onupgradeneeded = function(e) {
-                    const dbInstance = e.target.result;
-                    if (!dbInstance.objectStoreNames.contains(STORE_NAME)) {
-                        dbInstance.createObjectStore(STORE_NAME);
-                    }
+                const config = {
+                    locateFile: filename => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${filename}`
                 };
+                const SQL = await initSqlJs(config);
 
-                request.onsuccess = function(e) {
-                    db = e.target.result;
-                    // Sync from IndexedDB if available
-                    syncFromIndexedDB();
-                };
-
-                request.onerror = function() {
-                    console.warn("IndexedDB no disponible, utilizando únicamente LocalStorage.");
-                };
-            } catch (err) {
-                console.warn("Error inicializando el almacenamiento:", err);
-            }
-        }
-
-        // Direct LocalStorage Immediate Sync
-        function saveToLocalStorage() {
-            try {
-                const stateData = {
-                    perfumes: perfumes,
-                    cart: cart,
-                    whatsappNumber: whatsappNumber
-                };
-                localStorage.setItem('leandro_morales_state', JSON.stringify(stateData));
-            } catch (err) {
-                console.error("Error guardando en LocalStorage:", err);
-            }
-        }
-
-        function loadFromLocalStorage() {
-            try {
-                const stored = localStorage.getItem('leandro_morales_state');
-                if (stored) {
-                    const parsed = JSON.parse(stored);
-                    if (parsed.perfumes && Array.isArray(parsed.perfumes) && parsed.perfumes.length > 0) {
-                        perfumes = parsed.perfumes;
-                    }
-                    if (parsed.cart && Array.isArray(parsed.cart)) {
-                        cart = parsed.cart;
-                    }
-                    if (parsed.whatsappNumber) {
-                        whatsappNumber = parsed.whatsappNumber;
-                    }
+                // Recuperar DB binaria del almacenamiento si existe
+                const savedDb = localStorage.getItem('sqlite_db_binary');
+                if (savedDb) {
+                    const uInt8Array = new Uint8Array(JSON.parse(savedDb));
+                    db = new SQL.Database(uInt8Array);
+                } else {
+                    db = new SQL.Database();
+                    createTables();
+                    seedDatabase();
                 }
+
+                loadDataFromSQL();
             } catch (err) {
-                console.error("Error leyendo LocalStorage:", err);
+                console.error("Error inicializando SQL.js, reintentando con fallback:", err);
+                fallbackLocalStorage();
             }
         }
 
-        // Dual Synchronization Mechanism (IndexedDB + LocalStorage)
-        function saveState() {
-            // 1. Immediate LocalStorage Update
-            saveToLocalStorage();
-
-            // 2. IndexedDB Layer Persistence
-            if (db) {
-                try {
-                    const transaction = db.transaction([STORE_NAME], 'readwrite');
-                    const store = transaction.objectStore(STORE_NAME);
-                    store.put({
-                        perfumes: perfumes,
-                        cart: cart,
-                        whatsappNumber: whatsappNumber
-                    }, 'current_state');
-                } catch (err) {
-                    console.error("Error guardando en IndexedDB:", err);
-                }
-            }
+        function createTables() {
+            db.run(`
+                CREATE TABLE IF NOT EXISTS config (
+                    key TEXT PRIMARY KEY,
+                    value TEXT
+                );
+                CREATE TABLE IF NOT EXISTS perfumes (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT,
+                    category TEXT,
+                    family TEXT,
+                    rating TEXT,
+                    badge TEXT,
+                    price REAL,
+                    img TEXT,
+                    desc TEXT
+                );
+                CREATE TABLE IF NOT EXISTS cart (
+                    id INTEGER PRIMARY KEY,
+                    qty INTEGER
+                );
+            `);
+            saveSQLToStorage();
         }
 
-        function syncFromIndexedDB() {
+        function seedDatabase() {
+            db.run("INSERT OR REPLACE INTO config (key, value) VALUES ('whatsapp_number', '5491100000000');");
+            
+            const stmt = db.prepare(`
+                INSERT INTO perfumes (id, name, category, family, rating, badge, price, img, desc)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `);
+
+            defaultPerfumes.forEach(p => {
+                stmt.run([p.id, p.name, p.category, p.family, p.rating, p.badge, p.price, p.img, p.desc]);
+            });
+            stmt.free();
+
+            saveSQLToStorage();
+        }
+
+        function saveSQLToStorage() {
             if (!db) return;
-            try {
-                const transaction = db.transaction([STORE_NAME], 'readonly');
-                const store = transaction.objectStore(STORE_NAME);
-                const request = store.get('current_state');
+            const binaryArray = db.export();
+            localStorage.setItem('sqlite_db_binary', JSON.stringify(Array.from(binaryArray)));
+        }
 
-                request.onsuccess = function() {
-                    if (request.result) {
-                        const data = request.result;
-                        if (data.perfumes && Array.isArray(data.perfumes) && data.perfumes.length > 0) {
-                            perfumes = data.perfumes;
-                        }
-                        if (data.cart && Array.isArray(data.cart)) {
-                            cart = data.cart;
-                        }
-                        if (data.whatsappNumber) {
-                            whatsappNumber = data.whatsappNumber;
-                        }
-                        // Re-sync LocalStorage with IndexedDB truth and re-render
-                        saveToLocalStorage();
-                        renderProducts('todos');
-                        renderCart();
-                    }
-                };
-            } catch (err) {
-                console.error("Error al sincronizar desde IndexedDB:", err);
+        function loadDataFromSQL() {
+            if (!db) return;
+
+            // Cargar Configuración
+            const resConfig = db.exec("SELECT value FROM config WHERE key = 'whatsapp_number'");
+            if (resConfig.length > 0 && resConfig[0].values.length > 0) {
+                whatsappNumber = resConfig[0].values[0][0];
             }
+
+            // Cargar Perfumes
+            perfumes = [];
+            const resPerfumes = db.exec("SELECT id, name, category, family, rating, badge, price, img, desc FROM perfumes ORDER BY id DESC");
+            if (resPerfumes.length > 0) {
+                resPerfumes[0].values.forEach(row => {
+                    perfumes.push({
+                        id: row[0],
+                        name: row[1],
+                        category: row[2],
+                        family: row[3],
+                        rating: row[4],
+                        badge: row[5],
+                        price: row[6],
+                        img: row[7],
+                        desc: row[8]
+                    });
+                });
+            }
+
+            // Cargar Carrito
+            cart = [];
+            const resCart = db.exec("SELECT id, qty FROM cart");
+            if (resCart.length > 0) {
+                resCart[0].values.forEach(row => {
+                    const product = perfumes.find(p => p.id === row[0]);
+                    if (product) {
+                        cart.push({ ...product, qty: row[1] });
+                    }
+                });
+            }
+
+            renderProducts('todos');
+            renderCart();
+        }
+
+        function fallbackLocalStorage() {
+            const stored = localStorage.getItem('leandro_morales_state');
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                perfumes = parsed.perfumes || defaultPerfumes;
+                cart = parsed.cart || [];
+                whatsappNumber = parsed.whatsappNumber || "5491100000000";
+            } else {
+                perfumes = defaultPerfumes;
+            }
+            renderProducts('todos');
+            renderCart();
         }
 
         window.promptAdminPassword = function() {
@@ -592,8 +670,18 @@
             const input = document.getElementById('admin-phone-input');
             if (input && input.value.trim() !== '') {
                 whatsappNumber = input.value.trim().replace(/\+/g, '');
-                saveState(); // Synchronize immediately across storage layers
-                alert('Número de WhatsApp actualizado correctamente a: ' + whatsappNumber);
+                
+                if (db) {
+                    db.run("INSERT OR REPLACE INTO config (key, value) VALUES ('whatsapp_number', ?)", [whatsappNumber]);
+                    saveSQLToStorage();
+                }
+
+                // Guardar en la nube en tiempo real para todos los dispositivos
+                if (window.saveWhatsAppToCloud) {
+                    window.saveWhatsAppToCloud(whatsappNumber);
+                }
+
+                alert('Número de WhatsApp sincronizado globalmente para todos los dispositivos: ' + whatsappNumber);
                 closeAdminPanel();
             }
         }
@@ -620,49 +708,47 @@
             const urlImg = document.getElementById('prod-img').value;
             const desc = document.getElementById('prod-desc').value;
 
-            // Use uploaded local image if present, otherwise fall back to URL or placeholder
             const img = uploadedImageBase64 || urlImg || "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=800&auto=format&fit=crop";
+            const id = Date.now();
+            const rating = "5.0";
+            const badge = "Edición Limitada";
 
-            const newProduct = {
-                id: Date.now(),
-                name,
-                category,
-                family,
-                rating: "5.0",
-                badge: "Edición Limitada",
-                price,
-                img,
-                desc
-            };
+            if (db) {
+                const stmt = db.prepare(`
+                    INSERT INTO perfumes (id, name, category, family, rating, badge, price, img, desc)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `);
+                stmt.run([id, name, category, family, rating, badge, price, img, desc]);
+                stmt.free();
+                saveSQLToStorage();
+            }
 
-            perfumes.unshift(newProduct);
+            loadDataFromSQL();
             
-            // Immediate dual storage persistence (LocalStorage + IndexedDB)
-            saveState();
-
-            renderProducts('todos');
-            
-            // Reset form and variables
             e.target.reset();
             uploadedImageBase64 = "";
             const labelText = document.getElementById('file-label-text');
             if (labelText) labelText.innerText = "Subir desde tu equipo";
 
-            alert('¡Nuevo perfume agregado al catálogo!');
+            alert('¡Nuevo perfume registrado en la Base de Datos SQL!');
             closeAdminPanel();
         }
 
-        // Function to delete perfume from catalog with immediate dual storage update
         function deleteProduct(id) {
-            if (confirm("¿Estás seguro de que deseas eliminar este perfume del catálogo?")) {
-                perfumes = perfumes.filter(p => p.id !== id);
-                cart = cart.filter(c => c.id !== id);
+            if (confirm("¿Estás seguro de que deseas eliminar este perfume de la base de datos SQL?")) {
+                if (db) {
+                    db.run("DELETE FROM perfumes WHERE id = ?", [id]);
+                    db.run("DELETE FROM cart WHERE id = ?", [id]);
+                    saveSQLToStorage();
+                }
+                loadDataFromSQL();
+            }
+        }
 
-                // Immediate dual storage update (LocalStorage + IndexedDB)
-                saveState();
-
-                renderProducts('todos');
-                renderCart();
+        function closeMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.add('hidden');
             }
         }
 
@@ -676,25 +762,25 @@
             filtered.forEach(p => {
                 grid.innerHTML += `
                     <div class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] relative group">
-                        <button onclick="deleteProduct(${p.id})" title="Eliminar producto" class="absolute top-4 right-4 bg-red-600/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-lg">
+                        <button onclick="deleteProduct(${p.id})" title="Eliminar producto" aria-label="Eliminar perfume" class="absolute top-3 right-3 bg-red-600/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-xs opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-lg">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                         <div class="relative aspect-square overflow-hidden bg-dark-900">
                             <img src="${p.img}" alt="${p.name}" class="w-full h-full object-cover transition-transform duration-500 hover:scale-110">
-                            <span class="absolute top-4 left-4 bg-gold-500/90 text-dark-900 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">${p.badge}</span>
-                            <div class="absolute bottom-4 right-4 bg-dark-900/80 text-gold-400 px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 border border-gold-500/30">
+                            <span class="absolute top-3 left-3 bg-gold-500/90 text-dark-900 text-[9px] sm:text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">${p.badge}</span>
+                            <div class="absolute bottom-3 right-3 bg-dark-900/80 text-gold-400 px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 border border-gold-500/30">
                                 <i class="fa-solid fa-star text-gold-400"></i> ${p.rating}
                             </div>
                         </div>
-                        <div class="p-6 flex flex-col justify-between flex-1">
+                        <div class="p-4 sm:p-6 flex flex-col justify-between flex-1">
                             <div>
-                                <p class="text-[10px] uppercase tracking-widest text-gold-400 font-semibold mb-1">${p.family}</p>
-                                <h3 class="font-serif-title text-xl font-bold text-white mb-2">${p.name}</h3>
+                                <p class="text-[9px] sm:text-[10px] uppercase tracking-widest text-gold-400 font-semibold mb-1">${p.family}</p>
+                                <h3 class="font-serif-title text-lg sm:text-xl font-bold text-white mb-2">${p.name}</h3>
                                 <p class="text-xs text-gray-400 leading-relaxed mb-4">${p.desc}</p>
                             </div>
-                            <div class="flex items-center justify-between pt-4 border-t border-dark-700">
-                                <span class="text-xl font-bold gold-gradient-text">$${p.price}</span>
-                                <button onclick="addToCart(${p.id})" class="gold-gradient-bg text-dark-900 px-4 py-2 rounded-xl text-xs font-bold hover:opacity-90 transition-all flex items-center gap-1">
+                            <div class="flex items-center justify-between pt-3 sm:pt-4 border-t border-dark-700">
+                                <span class="text-lg sm:text-xl font-bold gold-gradient-text">$${p.price}</span>
+                                <button onclick="addToCart(${p.id})" class="gold-gradient-bg text-dark-900 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold hover:opacity-90 transition-all flex items-center gap-1 min-h-[36px]">
                                     <i class="fa-solid fa-plus"></i> Añadir
                                 </button>
                             </div>
@@ -719,28 +805,25 @@
         function addToCart(id) {
             const product = perfumes.find(p => p.id === id);
             if (!product) return;
-            const existing = cart.find(item => item.id === id);
-
-            if (existing) {
-                existing.qty++;
-            } else {
-                cart.push({ ...product, qty: 1 });
-            }
             
-            // Immediate dual storage update
-            saveState();
+            const existing = cart.find(item => item.id === id);
+            const newQty = existing ? existing.qty + 1 : 1;
 
-            renderCart();
+            if (db) {
+                db.run("INSERT OR REPLACE INTO cart (id, qty) VALUES (?, ?)", [id, newQty]);
+                saveSQLToStorage();
+            }
+
+            loadDataFromSQL();
             toggleCartModal(true);
         }
 
         function removeFromCart(id) {
-            cart = cart.filter(i => i.id !== id);
-            
-            // Immediate dual storage update (LocalStorage + IndexedDB)
-            saveState();
-
-            renderCart();
+            if (db) {
+                db.run("DELETE FROM cart WHERE id = ?", [id]);
+                saveSQLToStorage();
+            }
+            loadDataFromSQL();
         }
 
         function renderCart() {
@@ -819,9 +902,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            initStorage();
-            renderProducts('todos');
-            renderCart();
+            initSQLDatabase();
 
             const mobileMenuBtn = document.getElementById('mobile-menu-btn');
             const mobileMenu = document.getElementById('mobile-menu');
