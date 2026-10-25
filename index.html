@@ -440,6 +440,129 @@
         let whatsappNumber = "5491100000000";
         let uploadedImageBase64 = "";
 
+        // ==========================================
+        // INDEXEDDB & LOCALSTORAGE PERSISTENCE LAYER
+        // ==========================================
+        const DB_NAME = 'LeandroMoralesDB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'app_state';
+        let db = null;
+
+        // Initialize IndexedDB with fallback to LocalStorage
+        function initStorage() {
+            try {
+                // First load from LocalStorage to guarantee instant state availability
+                loadFromLocalStorage();
+
+                // Then initialize IndexedDB for dual persistence
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                request.onupgradeneeded = function(e) {
+                    const dbInstance = e.target.result;
+                    if (!dbInstance.objectStoreNames.contains(STORE_NAME)) {
+                        dbInstance.createObjectStore(STORE_NAME);
+                    }
+                };
+
+                request.onsuccess = function(e) {
+                    db = e.target.result;
+                    // Sync from IndexedDB if available
+                    syncFromIndexedDB();
+                };
+
+                request.onerror = function() {
+                    console.warn("IndexedDB no disponible, utilizando únicamente LocalStorage.");
+                };
+            } catch (err) {
+                console.warn("Error inicializando el almacenamiento:", err);
+            }
+        }
+
+        // Direct LocalStorage Immediate Sync
+        function saveToLocalStorage() {
+            try {
+                const stateData = {
+                    perfumes: perfumes,
+                    cart: cart,
+                    whatsappNumber: whatsappNumber
+                };
+                localStorage.setItem('leandro_morales_state', JSON.stringify(stateData));
+            } catch (err) {
+                console.error("Error guardando en LocalStorage:", err);
+            }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const stored = localStorage.getItem('leandro_morales_state');
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    if (parsed.perfumes && Array.isArray(parsed.perfumes) && parsed.perfumes.length > 0) {
+                        perfumes = parsed.perfumes;
+                    }
+                    if (parsed.cart && Array.isArray(parsed.cart)) {
+                        cart = parsed.cart;
+                    }
+                    if (parsed.whatsappNumber) {
+                        whatsappNumber = parsed.whatsappNumber;
+                    }
+                }
+            } catch (err) {
+                console.error("Error leyendo LocalStorage:", err);
+            }
+        }
+
+        // Dual Synchronization Mechanism (IndexedDB + LocalStorage)
+        function saveState() {
+            // 1. Immediate LocalStorage Update
+            saveToLocalStorage();
+
+            // 2. IndexedDB Layer Persistence
+            if (db) {
+                try {
+                    const transaction = db.transaction([STORE_NAME], 'readwrite');
+                    const store = transaction.objectStore(STORE_NAME);
+                    store.put({
+                        perfumes: perfumes,
+                        cart: cart,
+                        whatsappNumber: whatsappNumber
+                    }, 'current_state');
+                } catch (err) {
+                    console.error("Error guardando en IndexedDB:", err);
+                }
+            }
+        }
+
+        function syncFromIndexedDB() {
+            if (!db) return;
+            try {
+                const transaction = db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.get('current_state');
+
+                request.onsuccess = function() {
+                    if (request.result) {
+                        const data = request.result;
+                        if (data.perfumes && Array.isArray(data.perfumes) && data.perfumes.length > 0) {
+                            perfumes = data.perfumes;
+                        }
+                        if (data.cart && Array.isArray(data.cart)) {
+                            cart = data.cart;
+                        }
+                        if (data.whatsappNumber) {
+                            whatsappNumber = data.whatsappNumber;
+                        }
+                        // Re-sync LocalStorage with IndexedDB truth and re-render
+                        saveToLocalStorage();
+                        renderProducts('todos');
+                        renderCart();
+                    }
+                };
+            } catch (err) {
+                console.error("Error al sincronizar desde IndexedDB:", err);
+            }
+        }
+
         window.promptAdminPassword = function() {
             const password = prompt("Ingresa la clave de administración:");
             if (password === "bsl22") {
@@ -453,6 +576,8 @@
             const modal = document.getElementById('admin-modal');
             if (modal) {
                 modal.classList.remove('opacity-0', 'pointer-events-none');
+                const phoneInput = document.getElementById('admin-phone-input');
+                if (phoneInput) phoneInput.value = whatsappNumber;
             }
         };
 
@@ -467,6 +592,7 @@
             const input = document.getElementById('admin-phone-input');
             if (input && input.value.trim() !== '') {
                 whatsappNumber = input.value.trim().replace(/\+/g, '');
+                saveState(); // Synchronize immediately across storage layers
                 alert('Número de WhatsApp actualizado correctamente a: ' + whatsappNumber);
                 closeAdminPanel();
             }
@@ -510,6 +636,10 @@
             };
 
             perfumes.unshift(newProduct);
+            
+            // Immediate dual storage persistence (LocalStorage + IndexedDB)
+            saveState();
+
             renderProducts('todos');
             
             // Reset form and variables
@@ -522,6 +652,20 @@
             closeAdminPanel();
         }
 
+        // Function to delete perfume from catalog with immediate dual storage update
+        function deleteProduct(id) {
+            if (confirm("¿Estás seguro de que deseas eliminar este perfume del catálogo?")) {
+                perfumes = perfumes.filter(p => p.id !== id);
+                cart = cart.filter(c => c.id !== id);
+
+                // Immediate dual storage update (LocalStorage + IndexedDB)
+                saveState();
+
+                renderProducts('todos');
+                renderCart();
+            }
+        }
+
         function renderProducts(filter = 'todos') {
             const grid = document.getElementById('product-grid');
             if (!grid) return;
@@ -531,7 +675,10 @@
 
             filtered.forEach(p => {
                 grid.innerHTML += `
-                    <div class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between transition-all duration-300 hover:scale-[1.02]">
+                    <div class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] relative group">
+                        <button onclick="deleteProduct(${p.id})" title="Eliminar producto" class="absolute top-4 right-4 bg-red-600/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-lg">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
                         <div class="relative aspect-square overflow-hidden bg-dark-900">
                             <img src="${p.img}" alt="${p.name}" class="w-full h-full object-cover transition-transform duration-500 hover:scale-110">
                             <span class="absolute top-4 left-4 bg-gold-500/90 text-dark-900 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">${p.badge}</span>
@@ -579,12 +726,20 @@
             } else {
                 cart.push({ ...product, qty: 1 });
             }
+            
+            // Immediate dual storage update
+            saveState();
+
             renderCart();
             toggleCartModal(true);
         }
 
         function removeFromCart(id) {
             cart = cart.filter(i => i.id !== id);
+            
+            // Immediate dual storage update (LocalStorage + IndexedDB)
+            saveState();
+
             renderCart();
         }
 
@@ -664,6 +819,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            initStorage();
             renderProducts('todos');
             renderCart();
 
