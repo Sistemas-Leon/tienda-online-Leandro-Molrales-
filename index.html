@@ -40,70 +40,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Firebase JS SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "demo",
-            authDomain: "demo.firebaseapp.com",
-            projectId: "demo",
-            storageBucket: "demo.appspot.com",
-            messagingSenderId: "123456",
-            appId: "1:123456:web:123456"
-        };
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'leandro-morales-app';
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        window.firebaseDb = db;
-        window.firebaseAppId = appId;
-
-        async function initCloudSync() {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-                const configDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
-
-                onSnapshot(configDocRef, (docSnap) => {
-                    if (docSnap.exists() && docSnap.data().whatsappNumber) {
-                        window.whatsappNumber = docSnap.data().whatsappNumber;
-                        if (window.sqliteDb) {
-                            window.sqliteDb.run("INSERT OR REPLACE INTO config (key, value) VALUES ('whatsapp_number', ?)", [window.whatsappNumber]);
-                            if (window.saveSQLToStorage) window.saveSQLToStorage();
-                        }
-                        const phoneInput = document.getElementById('admin-phone-input');
-                        if (phoneInput) phoneInput.value = window.whatsappNumber;
-                    }
-                }, (error) => {
-                    console.error("Cloud sync error:", error);
-                });
-            } catch (err) {
-                console.warn("Cloud authentication or sync bypassed:", err);
-            }
-        }
-
-        window.saveWhatsAppToCloud = async function(number) {
-            if (!auth.currentUser) return;
-            try {
-                const configDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
-                await setDoc(configDocRef, { whatsappNumber: number }, { merge: true });
-            } catch (err) {
-                console.error("Error saving WhatsApp number to cloud:", err);
-            }
-        };
-
-        initCloudSync();
-    </script>
 
     <!-- SQL.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
@@ -134,13 +70,6 @@
             border-color: rgba(250, 204, 21, 0.4);
             box-shadow: 0 10px 30px -10px rgba(234, 179, 8, 0.15);
         }
-        @keyframes customPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.15); }
-        }
-        .pulse-badge {
-            animation: customPulse 2s infinite ease-in-out;
-        }
     </style>
 </head>
 <body class="bg-dark-900 text-gray-200 antialiased selection:bg-gold-500 selection:text-black">
@@ -166,7 +95,7 @@
                 <div class="hidden lg:flex items-center gap-4">
                     <button onclick="toggleCartModal()" class="relative p-2.5 rounded-full bg-dark-800 hover:bg-dark-700 border border-dark-600 text-gold-400 transition-all">
                         <i class="fa-solid fa-cart-shopping text-lg"></i>
-                        <span id="cart-badge" class="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">0</span>
+                        <span id="cart-badge" class="absolute -top-1 -right-1 bg-gold-500 text-dark-900 text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">0</span>
                     </button>
                     <a href="#catalogo" class="gold-gradient-bg text-dark-900 px-5 py-2.5 rounded-full font-semibold text-sm hover:opacity-95 transition-all shadow-md shadow-gold-500/10">
                         Explorar Fragancias
@@ -176,7 +105,7 @@
                 <div class="lg:hidden flex items-center gap-2 sm:gap-3">
                     <button onclick="toggleCartModal()" class="relative p-2.5 rounded-full bg-dark-800 text-gold-400 border border-dark-700 min-w-[40px] min-h-[40px] flex items-center justify-center">
                         <i class="fa-solid fa-cart-shopping"></i>
-                        <span id="mobile-cart-badge" class="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span>
+                        <span id="mobile-cart-badge" class="absolute -top-1 -right-1 bg-gold-500 text-dark-900 text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span>
                     </button>
                     <button id="mobile-menu-btn" aria-label="Abrir menú" class="text-gray-300 hover:text-white p-2.5 text-xl focus:outline-none min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg bg-dark-800 border border-dark-700">
                         <i class="fa-solid fa-bars"></i>
@@ -300,10 +229,8 @@
                 </div>
                 <h2 class="font-serif-title text-xl sm:text-3xl font-bold text-white">Administración de la Tienda</h2>
             </div>
-                        </button>
-                    </div>
-                </div>
 
+            <div class="space-y-6 sm:space-y-8">
                 <div class="glass-card p-4 sm:p-6 rounded-xl">
                     <h3 class="font-serif-title text-base sm:text-lg font-bold text-gold-400 mb-4 flex items-center gap-2">
                         <i class="fa-solid fa-plus-circle"></i> Agregar Nuevo Perfume
@@ -375,10 +302,10 @@
                 </div>
                 <div>
                     <h4 class="font-serif-title text-xs sm:text-sm font-bold text-gold-400 mb-3 sm:mb-4 uppercase tracking-wider">Atención VIP</h4>
-                    <p class="text-xs text-gray-400 mb-3">Atención personalizada y asesoramiento olfativo inmediato.</p>
-                    <button onclick="openWhatsAppChat()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-green-600/20 text-green-400 border border-green-500/30 text-xs font-semibold hover:bg-green-600/30 transition-all">
-                        <i class="fa-brands fa-whatsapp"></i> Contactar por WhatsApp
-                    </button>
+                    <p class="text-xs text-gray-400 mb-3">Atención personalizada y asesoramiento olfativo inmediato en boutiques.</p>
+                    <a href="mailto:contacto@leandromorales.com" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gold-500/20 text-gold-400 border border-gold-500/30 text-xs font-semibold hover:bg-gold-500/30 transition-all">
+                        <i class="fa-solid fa-envelope"></i> Contactar por Email
+                    </a>
                 </div>
             </div>
 
@@ -416,26 +343,10 @@
                     <span class="text-gray-300">Total:</span>
                     <span id="cart-total" class="gold-gradient-text">$0</span>
                 </div>
-                <button onclick="sendWhatsAppOrder()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all text-sm sm:text-base">
-                    <i class="fa-brands fa-whatsapp text-lg sm:text-xl"></i> Confirmar Pedido por WhatsApp
+                <button onclick="confirmOrder()" class="w-full gold-gradient-bg text-dark-900 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg hover:opacity-95 transition-all text-sm sm:text-base">
+                    <i class="fa-solid fa-bag-shopping text-lg"></i> Finalizar Pedido
                 </button>
             </div>
-        </div>
-    </div>
-
-    <!-- WHATSAPP FLOATING BUTTON -->
-     
-    <a href="https://wa.me/5492615960049"></a>
-    <div class="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-50 flex items-center gap-3">
-        <div class="relative group">
-            <div class="hidden sm:flex absolute left-16 bottom-1/2 translate-y-1/2 bg-dark-800 text-white text-xs px-4 py-2.5 rounded-xl border border-gold-500/30 whitespace-nowrap opacity-100 shadow-xl items-center gap-2 pointer-events-none">
-                <span class="w-2 h-2 rounded-full bg-green-500 animate-ping"></span>
-                <span>Hola, escríbenos para ayudarte</span>
-            </div>
-            <button onclick="openWhatsAppChat()" aria-label="Contactar por WhatsApp" class="relative w-12 h-12 sm:w-14 sm:h-14 bg-green-500 hover:bg-green-400 text-white rounded-full flex items-center justify-center text-xl sm:text-2xl shadow-2xl shadow-green-500/40 transition-all hover:scale-105">
-                <i class="fa-brands fa-whatsapp"></i>
-                <span class="pulse-badge absolute -top-1 -right-1 bg-red-600 text-white text-[10px] sm:text-[11px] font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center border-2 border-dark-900">1</span>
-            </button>
         </div>
     </div>
 
@@ -443,7 +354,6 @@
     <script>
         let perfumes = [];
         let cart = [];
-        let whatsappNumber = "5492615960049";
         let uploadedImageBase64 = "";
         let db = null;
 
@@ -519,10 +429,6 @@
 
         function createTables() {
             db.run(`
-                CREATE TABLE IF NOT EXISTS config (
-                    key TEXT PRIMARY KEY,
-                    value TEXT
-                );
                 CREATE TABLE IF NOT EXISTS perfumes (
                     id INTEGER PRIMARY KEY,
                     name TEXT,
@@ -543,8 +449,6 @@
         }
 
         function seedDatabase() {
-            db.run("INSERT OR REPLACE INTO config (key, value) VALUES ('whatsapp_number', '5492615960049');");
-            
             const stmt = db.prepare(`
                 INSERT OR IGNORE INTO perfumes (id, name, category, family, rating, badge, price, img, desc)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -571,12 +475,6 @@
 
         function loadDataFromSQL() {
             if (!db) return;
-
-            // Configuración
-            const resConfig = db.exec("SELECT value FROM config WHERE key = 'whatsapp_number'");
-            if (resConfig.length > 0 && resConfig[0].values.length > 0) {
-                whatsappNumber = resConfig[0].values[0][0];
-            }
 
             // Cargar Perfumes
             perfumes = [];
@@ -619,7 +517,6 @@
                 const parsed = JSON.parse(stored);
                 perfumes = parsed.perfumes || defaultPerfumes;
                 cart = parsed.cart || [];
-                whatsappNumber = parsed.whatsappNumber || "5492615960049";
             } else {
                 perfumes = defaultPerfumes;
             }
@@ -640,8 +537,6 @@
             const modal = document.getElementById('admin-modal');
             if (modal) {
                 modal.classList.remove('opacity-0', 'pointer-events-none');
-                const phoneInput = document.getElementById('admin-phone-input');
-                if (phoneInput) phoneInput.value = whatsappNumber;
             }
         };
 
@@ -651,25 +546,6 @@
                 modal.classList.add('opacity-0', 'pointer-events-none');
             }
         };
-
-        function saveWhatsAppNumber() {
-            const input = document.getElementById('admin-phone-input');
-            if (input && input.value.trim() !== '') {
-                whatsappNumber = input.value.trim().replace(/\+/g, '');
-                
-                if (db) {
-                    db.run("INSERT OR REPLACE INTO config (key, value) VALUES ('whatsapp_number', ?)", [whatsappNumber]);
-                    saveSQLToStorage();
-                }
-
-                if (window.saveWhatsAppToCloud) {
-                    window.saveWhatsAppToCloud(whatsappNumber);
-                }
-
-                alert('Número de WhatsApp sincronizado globalmente: ' + whatsappNumber);
-                closeAdminPanel();
-            }
-        }
 
         function handleFileSelect(event) {
             const file = event.target.files[0];
@@ -862,28 +738,20 @@
             }
         }
 
-        function openWhatsAppChat() {
-            const msg = encodeURIComponent("Hola Leandro Morales Perfumería, quisiera información sobre sus perfumes de lujo.");
-            window.open(`https://wa.me/${whatsappNumber}?text=${msg}`, '_blank');
-        }
-
-        function sendWhatsAppOrder() {
+        function confirmOrder() {
             if (cart.length === 0) {
                 alert('Añade al menos un perfume al carrito para realizar el pedido.');
                 return;
             }
 
-            let message = "Hola *Leandro Morales Perfumería*, me gustaría realizar la siguiente compra:\n\n";
-            let total = 0;
-
-            cart.forEach(item => {
-                const subtotal = item.price * item.qty;
-                total += subtotal;
-                message += `• *${item.name}* (${item.qty}x) - $${subtotal}\n`;
-            });
-
-            message += `\n*Total a pagar:* $${total}\n\nQuedo a la espera de sus datos de confirmación.`;
-            window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank');
+            alert('¡Gracias por tu pedido! Nos pondremos en contacto contigo a la brevedad para coordinar el pago y la entrega.');
+            
+            if (db) {
+                db.run("DELETE FROM cart");
+                saveSQLToStorage();
+            }
+            loadDataFromSQL();
+            toggleCartModal();
         }
 
         document.addEventListener('DOMContentLoaded', () => {
