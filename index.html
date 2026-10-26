@@ -357,6 +357,9 @@
         let uploadedImageBase64 = "";
         let db = null;
 
+        const STORAGE_KEY_PERFUMES = 'leandro_morales_perfumes_v2';
+        const STORAGE_KEY_CART = 'leandro_morales_cart_v2';
+
         const defaultPerfumes = [
             {
                 id: 1,
@@ -393,6 +396,40 @@
             }
         ];
 
+        // --- SISTEMA DE DOBLE CAPA DE PERSISTENCIA ---
+
+        function saveToBackupLocalStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY_PERFUMES, JSON.stringify(perfumes));
+                localStorage.setItem(STORAGE_KEY_CART, JSON.stringify(cart));
+            } catch (e) {
+                console.warn("No se pudo guardar copia de seguridad en localStorage:", e);
+            }
+        }
+
+        function loadFromBackupLocalStorage() {
+            try {
+                const savedPerfumes = localStorage.getItem(STORAGE_KEY_PERFUMES);
+                const savedCart = localStorage.getItem(STORAGE_KEY_CART);
+
+                if (savedPerfumes) {
+                    perfumes = JSON.parse(savedPerfumes);
+                } else {
+                    perfumes = [...defaultPerfumes];
+                }
+
+                if (savedCart) {
+                    cart = JSON.parse(savedCart);
+                } else {
+                    cart = [];
+                }
+            } catch (e) {
+                console.error("Error al cargar desde respaldo local:", e);
+                perfumes = [...defaultPerfumes];
+                cart = [];
+            }
+        }
+
         async function initSQLDatabase() {
             try {
                 const config = {
@@ -422,8 +459,10 @@
 
                 loadDataFromSQL();
             } catch (err) {
-                console.error("Error inicializando SQL.js, usando fallback:", err);
-                fallbackLocalStorage();
+                console.warn("SQL.js no se pudo iniciar, recurriendo a persistencia doble localStorage direct:", err);
+                loadFromBackupLocalStorage();
+                renderProducts('todos');
+                renderCart();
             }
         }
 
@@ -449,12 +488,13 @@
         }
 
         function seedDatabase() {
+            loadFromBackupLocalStorage();
             const stmt = db.prepare(`
                 INSERT OR IGNORE INTO perfumes (id, name, category, family, rating, badge, price, img, desc)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             `);
 
-            defaultPerfumes.forEach(p => {
+            perfumes.forEach(p => {
                 stmt.run([p.id, p.name, p.category, p.family, p.rating, p.badge, p.price, p.img, p.desc]);
             });
             stmt.free();
@@ -463,18 +503,26 @@
         }
 
         function saveSQLToStorage() {
-            if (!db) return;
-            try {
-                const binaryArray = db.export();
-                localStorage.setItem('sqlite_db_binary', JSON.stringify(Array.from(binaryArray)));
-            } catch (e) {
-                console.error("Error guardando DB SQL:", e);
+            if (db) {
+                try {
+                    const binaryArray = db.export();
+                    localStorage.setItem('sqlite_db_binary', JSON.stringify(Array.from(binaryArray)));
+                } catch (e) {
+                    console.error("Error guardando DB SQL en almacenamiento:", e);
+                }
             }
+            // Sincronizar siempre con el respaldo secundario
+            saveToBackupLocalStorage();
         }
         window.saveSQLToStorage = saveSQLToStorage;
 
         function loadDataFromSQL() {
-            if (!db) return;
+            if (!db) {
+                loadFromBackupLocalStorage();
+                renderProducts('todos');
+                renderCart();
+                return;
+            }
 
             // Cargar Perfumes
             perfumes = [];
@@ -493,6 +541,8 @@
                         desc: row[8]
                     });
                 });
+            } else {
+                perfumes = [...defaultPerfumes];
             }
 
             // Cargar Carrito
@@ -507,19 +557,9 @@
                 });
             }
 
-            renderProducts('todos');
-            renderCart();
-        }
+            // Guardar backup
+            saveToBackupLocalStorage();
 
-        function fallbackLocalStorage() {
-            const stored = localStorage.getItem('leandro_morales_state');
-            if (stored) {
-                const parsed = JSON.parse(stored);
-                perfumes = parsed.perfumes || defaultPerfumes;
-                cart = parsed.cart || [];
-            } else {
-                perfumes = defaultPerfumes;
-            }
             renderProducts('todos');
             renderCart();
         }
@@ -574,6 +614,8 @@
             const rating = "5.0";
             const badge = "Edición Limitada";
 
+            const newPerfume = { id, name, category, family, rating, badge, price, img, desc };
+
             if (db) {
                 const stmt = db.prepare(`
                     INSERT INTO perfumes (id, name, category, family, rating, badge, price, img, desc)
@@ -581,9 +623,10 @@
                 `);
                 stmt.run([id, name, category, family, rating, badge, price, img, desc]);
                 stmt.free();
-                saveSQLToStorage();
             }
 
+            perfumes.push(newPerfume);
+            saveSQLToStorage();
             loadDataFromSQL();
             
             e.target.reset();
@@ -591,17 +634,19 @@
             const labelText = document.getElementById('file-label-text');
             if (labelText) labelText.innerText = "Subir desde tu equipo";
 
-            alert('¡Nuevo perfume registrado en la Base de Datos SQL!');
+            alert('¡Nuevo perfume guardado en la Base de Datos con doble respaldo!');
             closeAdminPanel();
         }
 
         function deleteProduct(id) {
-            if (confirm("¿Estás seguro de que deseas eliminar este perfume de la base de datos SQL?")) {
+            if (confirm("¿Estás seguro de que deseas eliminar este perfume?")) {
                 if (db) {
                     db.run("DELETE FROM perfumes WHERE id = ?", [id]);
                     db.run("DELETE FROM cart WHERE id = ?", [id]);
-                    saveSQLToStorage();
                 }
+                perfumes = perfumes.filter(p => p.id !== id);
+                cart = cart.filter(c => c.id !== id);
+                saveSQLToStorage();
                 loadDataFromSQL();
             }
         }
@@ -672,9 +717,15 @@
 
             if (db) {
                 db.run("INSERT OR REPLACE INTO cart (id, qty) VALUES (?, ?)", [id, newQty]);
-                saveSQLToStorage();
             }
 
+            if (existing) {
+                existing.qty = newQty;
+            } else {
+                cart.push({ ...product, qty: 1 });
+            }
+
+            saveSQLToStorage();
             loadDataFromSQL();
             toggleCartModal(true);
         }
@@ -682,8 +733,9 @@
         function removeFromCart(id) {
             if (db) {
                 db.run("DELETE FROM cart WHERE id = ?", [id]);
-                saveSQLToStorage();
             }
+            cart = cart.filter(c => c.id !== id);
+            saveSQLToStorage();
             loadDataFromSQL();
         }
 
@@ -759,11 +811,12 @@
             const phone = "5492615960049";
             const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
-            // Limpiar el carrito en la base de datos SQL
+            // Limpiar el carrito en ambas capas
             if (db) {
                 db.run("DELETE FROM cart");
-                saveSQLToStorage();
             }
+            cart = [];
+            saveSQLToStorage();
             loadDataFromSQL();
             toggleCartModal();
 
