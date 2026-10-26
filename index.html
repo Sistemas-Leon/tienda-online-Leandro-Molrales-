@@ -41,8 +41,79 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- SQL.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <!-- Firebase Configuration & Setup -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Setup & Environment variables
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'leandro-morales-perfumes';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "demo-api-key",
+            authDomain: "demo-app.firebaseapp.com",
+            projectId: "demo-app",
+            storageBucket: "demo-app.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // State & Refs
+        window.db = db;
+        window.appId = appId;
+        window.perfumesCollection = collection(db, 'artifacts', appId, 'public', 'data', 'perfumes');
+        window.cartCollection = collection(db, 'artifacts', appId, 'public', 'data', 'cart');
+
+        // Authenticate & listen to realtime updates from Cloud Firestore
+        async function initCloudSync() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // Subscripción en tiempo real a Perfumes
+                onSnapshot(window.perfumesCollection, (snapshot) => {
+                    if (snapshot.empty && perfumes.length === 0) {
+                        // Cargar perfumes por defecto si la base de datos está vacía
+                        seedCloudDatabase();
+                    } else {
+                        perfumes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        renderProducts(window.currentFilter || 'todos');
+                    }
+                }, (error) => {
+                    console.error("Error al escuchar cambios en la nube (perfumes):", error);
+                });
+
+                // Subscripción en tiempo real al Carrito
+                onSnapshot(window.cartCollection, (snapshot) => {
+                    cart = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderCart();
+                }, (error) => {
+                    console.error("Error al escuchar cambios en la nube (carrito):", error);
+                });
+
+            } catch (error) {
+                console.error("Error en la autenticación con la nube:", error);
+            }
+        }
+
+        async function seedCloudDatabase() {
+            for (const p of defaultPerfumes) {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'perfumes', String(p.id)), p);
+            }
+        }
+
+        window.initCloudSync = initCloudSync;
+        window.setDoc = setDoc;
+        window.deleteDoc = deleteDoc;
+        window.doc = doc;
+    </script>
 
     <style>
         body {
@@ -355,14 +426,11 @@
         let perfumes = [];
         let cart = [];
         let uploadedImageBase64 = "";
-        let db = null;
-
-        const STORAGE_KEY_PERFUMES = 'leandro_morales_perfumes_v2';
-        const STORAGE_KEY_CART = 'leandro_morales_cart_v2';
+        window.currentFilter = 'todos';
 
         const defaultPerfumes = [
             {
-                id: 1,
+                id: "1",
                 name: "Ébano & Amber Royal",
                 category: "oriental",
                 family: "Amaderado Oriental",
@@ -373,7 +441,7 @@
                 desc: "Un acorde suntuoso de ébano ahumado, ámbar cálido y notas de resina dorada."
             },
             {
-                id: 2,
+                id: "2",
                 name: "Velvet Rose & Iris",
                 category: "floral",
                 family: "Floral Noble",
@@ -384,7 +452,7 @@
                 desc: "Rosas de Grasse infusionadas con iris italiano y un toque sutil de almizcle blanco."
             },
             {
-                id: 3,
+                id: "3",
                 name: "Citrus Royale & Cedar",
                 category: "fresco",
                 family: "Cítrico Amaderado",
@@ -395,174 +463,6 @@
                 desc: "Bergamota de Calabria combinada con cedro del Atlas y pimienta rosa chispeante."
             }
         ];
-
-        // --- SISTEMA DE DOBLE CAPA DE PERSISTENCIA ---
-
-        function saveToBackupLocalStorage() {
-            try {
-                localStorage.setItem(STORAGE_KEY_PERFUMES, JSON.stringify(perfumes));
-                localStorage.setItem(STORAGE_KEY_CART, JSON.stringify(cart));
-            } catch (e) {
-                console.warn("No se pudo guardar copia de seguridad en localStorage:", e);
-            }
-        }
-
-        function loadFromBackupLocalStorage() {
-            try {
-                const savedPerfumes = localStorage.getItem(STORAGE_KEY_PERFUMES);
-                const savedCart = localStorage.getItem(STORAGE_KEY_CART);
-
-                if (savedPerfumes) {
-                    perfumes = JSON.parse(savedPerfumes);
-                } else {
-                    perfumes = [...defaultPerfumes];
-                }
-
-                if (savedCart) {
-                    cart = JSON.parse(savedCart);
-                } else {
-                    cart = [];
-                }
-            } catch (e) {
-                console.error("Error al cargar desde respaldo local:", e);
-                perfumes = [...defaultPerfumes];
-                cart = [];
-            }
-        }
-
-        async function initSQLDatabase() {
-            try {
-                const config = {
-                    locateFile: filename => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${filename}`
-                };
-                const SQL = await initSqlJs(config);
-
-                const savedDb = localStorage.getItem('sqlite_db_binary');
-                if (savedDb) {
-                    try {
-                        const uInt8Array = new Uint8Array(JSON.parse(savedDb));
-                        db = new SQL.Database(uInt8Array);
-                        window.sqliteDb = db;
-                    } catch (e) {
-                        console.error("Error al cargar la DB guardada:", e);
-                        db = new SQL.Database();
-                        window.sqliteDb = db;
-                        createTables();
-                        seedDatabase();
-                    }
-                } else {
-                    db = new SQL.Database();
-                    window.sqliteDb = db;
-                    createTables();
-                    seedDatabase();
-                }
-
-                loadDataFromSQL();
-            } catch (err) {
-                console.warn("SQL.js no se pudo iniciar, recurriendo a persistencia doble localStorage direct:", err);
-                loadFromBackupLocalStorage();
-                renderProducts('todos');
-                renderCart();
-            }
-        }
-
-        function createTables() {
-            db.run(`
-                CREATE TABLE IF NOT EXISTS perfumes (
-                    id INTEGER PRIMARY KEY,
-                    name TEXT,
-                    category TEXT,
-                    family TEXT,
-                    rating TEXT,
-                    badge TEXT,
-                    price REAL,
-                    img TEXT,
-                    desc TEXT
-                );
-                CREATE TABLE IF NOT EXISTS cart (
-                    id INTEGER PRIMARY KEY,
-                    qty INTEGER
-                );
-            `);
-            saveSQLToStorage();
-        }
-
-        function seedDatabase() {
-            loadFromBackupLocalStorage();
-            const stmt = db.prepare(`
-                INSERT OR IGNORE INTO perfumes (id, name, category, family, rating, badge, price, img, desc)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `);
-
-            perfumes.forEach(p => {
-                stmt.run([p.id, p.name, p.category, p.family, p.rating, p.badge, p.price, p.img, p.desc]);
-            });
-            stmt.free();
-
-            saveSQLToStorage();
-        }
-
-        function saveSQLToStorage() {
-            if (db) {
-                try {
-                    const binaryArray = db.export();
-                    localStorage.setItem('sqlite_db_binary', JSON.stringify(Array.from(binaryArray)));
-                } catch (e) {
-                    console.error("Error guardando DB SQL en almacenamiento:", e);
-                }
-            }
-            // Sincronizar siempre con el respaldo secundario
-            saveToBackupLocalStorage();
-        }
-        window.saveSQLToStorage = saveSQLToStorage;
-
-        function loadDataFromSQL() {
-            if (!db) {
-                loadFromBackupLocalStorage();
-                renderProducts('todos');
-                renderCart();
-                return;
-            }
-
-            // Cargar Perfumes
-            perfumes = [];
-            const resPerfumes = db.exec("SELECT id, name, category, family, rating, badge, price, img, desc FROM perfumes");
-            if (resPerfumes.length > 0) {
-                resPerfumes[0].values.forEach(row => {
-                    perfumes.push({
-                        id: row[0],
-                        name: row[1],
-                        category: row[2],
-                        family: row[3],
-                        rating: row[4],
-                        badge: row[5],
-                        price: row[6],
-                        img: row[7],
-                        desc: row[8]
-                    });
-                });
-            } else {
-                perfumes = [...defaultPerfumes];
-            }
-
-            // Cargar Carrito
-            cart = [];
-            const resCart = db.exec("SELECT id, qty FROM cart");
-            if (resCart.length > 0) {
-                resCart[0].values.forEach(row => {
-                    const product = perfumes.find(p => p.id === row[0]);
-                    if (product) {
-                        cart.push({ ...product, qty: row[1] });
-                    }
-                });
-            }
-
-            // Guardar backup
-            saveToBackupLocalStorage();
-
-            renderProducts('todos');
-            renderCart();
-        }
 
         window.promptAdminPassword = function() {
             const password = prompt("Ingresa la clave de administración:");
@@ -600,7 +500,7 @@
             }
         }
 
-        function addNewProduct(e) {
+        async function addNewProduct(e) {
             e.preventDefault();
             const name = document.getElementById('prod-name').value;
             const category = document.getElementById('prod-category').value;
@@ -610,44 +510,35 @@
             const desc = document.getElementById('prod-desc').value;
 
             const img = uploadedImageBase64 || urlImg || "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=800&auto=format&fit=crop";
-            const id = Date.now();
+            const id = String(Date.now());
             const rating = "5.0";
             const badge = "Edición Limitada";
 
             const newPerfume = { id, name, category, family, rating, badge, price, img, desc };
 
-            if (db) {
-                const stmt = db.prepare(`
-                    INSERT INTO perfumes (id, name, category, family, rating, badge, price, img, desc)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                `);
-                stmt.run([id, name, category, family, rating, badge, price, img, desc]);
-                stmt.free();
+            try {
+                await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'perfumes', id), newPerfume);
+                e.target.reset();
+                uploadedImageBase64 = "";
+                const labelText = document.getElementById('file-label-text');
+                if (labelText) labelText.innerText = "Subir desde tu equipo";
+
+                alert('¡Nuevo perfume guardado en la Nube con éxito! Ahora es visible en todos los dispositivos.');
+                closeAdminPanel();
+            } catch (err) {
+                console.error("Error al publicar perfume:", err);
+                alert("Hubo un problema al guardar el perfume en la nube.");
             }
-
-            perfumes.push(newPerfume);
-            saveSQLToStorage();
-            loadDataFromSQL();
-            
-            e.target.reset();
-            uploadedImageBase64 = "";
-            const labelText = document.getElementById('file-label-text');
-            if (labelText) labelText.innerText = "Subir desde tu equipo";
-
-            alert('¡Nuevo perfume guardado en la Base de Datos con doble respaldo!');
-            closeAdminPanel();
         }
 
-        function deleteProduct(id) {
-            if (confirm("¿Estás seguro de que deseas eliminar este perfume?")) {
-                if (db) {
-                    db.run("DELETE FROM perfumes WHERE id = ?", [id]);
-                    db.run("DELETE FROM cart WHERE id = ?", [id]);
+        async function deleteProduct(id) {
+            if (confirm("¿Estás seguro de que deseas eliminar este perfume? Se borrará de todos los dispositivos.")) {
+                try {
+                    await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'perfumes', String(id)));
+                    await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'cart', String(id)));
+                } catch (err) {
+                    console.error("Error al eliminar producto:", err);
                 }
-                perfumes = perfumes.filter(p => p.id !== id);
-                cart = cart.filter(c => c.id !== id);
-                saveSQLToStorage();
-                loadDataFromSQL();
             }
         }
 
@@ -659,16 +550,22 @@
         }
 
         function renderProducts(filter = 'todos') {
+            window.currentFilter = filter;
             const grid = document.getElementById('product-grid');
             if (!grid) return;
 
             grid.innerHTML = '';
             const filtered = filter === 'todos' ? perfumes : perfumes.filter(p => p.category === filter);
 
+            if (filtered.length === 0) {
+                grid.innerHTML = '<p class="col-span-full text-center text-gray-400 py-12">No hay perfumes disponibles en esta categoría.</p>';
+                return;
+            }
+
             filtered.forEach(p => {
                 grid.innerHTML += `
                     <div class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] relative group">
-                        <button onclick="deleteProduct(${p.id})" title="Eliminar producto" aria-label="Eliminar perfume" class="absolute top-3 right-3 bg-red-600/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-xs opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-lg">
+                        <button onclick="deleteProduct('${p.id}')" title="Eliminar producto" aria-label="Eliminar perfume" class="absolute top-3 right-3 bg-red-600/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-xs opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-lg">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                         <div class="relative aspect-square overflow-hidden bg-dark-900">
@@ -686,7 +583,7 @@
                             </div>
                             <div class="flex items-center justify-between pt-3 sm:pt-4 border-t border-dark-700">
                                 <span class="text-lg sm:text-xl font-bold gold-gradient-text">$${p.price}</span>
-                                <button onclick="addToCart(${p.id})" class="gold-gradient-bg text-dark-900 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold hover:opacity-90 transition-all flex items-center gap-1 min-h-[36px]">
+                                <button onclick="addToCart('${p.id}')" class="gold-gradient-bg text-dark-900 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold hover:opacity-90 transition-all flex items-center gap-1 min-h-[36px]">
                                     <i class="fa-solid fa-plus"></i> Añadir
                                 </button>
                             </div>
@@ -708,35 +605,30 @@
             renderProducts(cat);
         }
 
-        function addToCart(id) {
-            const product = perfumes.find(p => p.id === id);
+        async function addToCart(id) {
+            const product = perfumes.find(p => String(p.id) === String(id));
             if (!product) return;
             
-            const existing = cart.find(item => item.id === id);
+            const existing = cart.find(item => String(item.id) === String(id));
             const newQty = existing ? existing.qty + 1 : 1;
 
-            if (db) {
-                db.run("INSERT OR REPLACE INTO cart (id, qty) VALUES (?, ?)", [id, newQty]);
+            try {
+                await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'cart', String(id)), {
+                    ...product,
+                    qty: newQty
+                });
+                toggleCartModal(true);
+            } catch (err) {
+                console.error("Error al agregar al carrito en la nube:", err);
             }
-
-            if (existing) {
-                existing.qty = newQty;
-            } else {
-                cart.push({ ...product, qty: 1 });
-            }
-
-            saveSQLToStorage();
-            loadDataFromSQL();
-            toggleCartModal(true);
         }
 
-        function removeFromCart(id) {
-            if (db) {
-                db.run("DELETE FROM cart WHERE id = ?", [id]);
+        async function removeFromCart(id) {
+            try {
+                await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'cart', String(id)));
+            } catch (err) {
+                console.error("Error al eliminar del carrito en la nube:", err);
             }
-            cart = cart.filter(c => c.id !== id);
-            saveSQLToStorage();
-            loadDataFromSQL();
         }
 
         function renderCart() {
@@ -766,7 +658,7 @@
                                     <p class="text-[10px] text-gray-400">$${item.price} x ${item.qty}</p>
                                 </div>
                             </div>
-                            <button onclick="removeFromCart(${item.id})" class="text-red-400 text-xs p-2 hover:text-red-300">
+                            <button onclick="removeFromCart('${item.id}')" class="text-red-400 text-xs p-2 hover:text-red-300">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>
@@ -790,13 +682,12 @@
             }
         }
 
-        function confirmOrder() {
+        async function confirmOrder() {
             if (cart.length === 0) {
                 alert('Añade al menos un perfume al carrito para realizar el pedido.');
                 return;
             }
 
-            // Construir el mensaje formateado para WhatsApp
             let total = 0;
             let itemsText = "";
 
@@ -811,21 +702,21 @@
             const phone = "5492615960049";
             const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
-            // Limpiar el carrito en ambas capas
-            if (db) {
-                db.run("DELETE FROM cart");
+            // Vaciar el carrito en la nube
+            for (const item of cart) {
+                await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'cart', String(item.id)));
             }
-            cart = [];
-            saveSQLToStorage();
-            loadDataFromSQL();
+
             toggleCartModal();
 
-            // Abrir WhatsApp en una nueva pestaña
+            // Abrir WhatsApp
             window.open(whatsappUrl, '_blank');
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            initSQLDatabase();
+            if (window.initCloudSync) {
+                window.initCloudSync();
+            }
 
             const mobileMenuBtn = document.getElementById('mobile-menu-btn');
             const mobileMenu = document.getElementById('mobile-menu');
