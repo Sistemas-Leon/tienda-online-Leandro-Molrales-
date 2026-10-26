@@ -44,11 +44,10 @@
     <!-- Firebase JS SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            // Fallback config if environment variable is not set
             apiKey: "demo",
             authDomain: "demo.firebaseapp.com",
             projectId: "demo",
@@ -65,7 +64,6 @@
         window.firebaseDb = db;
         window.firebaseAppId = appId;
 
-        // Synchronize WhatsApp configuration globally
         async function initCloudSync() {
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -74,13 +72,15 @@
                     await signInAnonymously(auth);
                 }
 
-                // Reference to shared config document
                 const configDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
 
-                // Real-time listener for WhatsApp number across all devices
                 onSnapshot(configDocRef, (docSnap) => {
                     if (docSnap.exists() && docSnap.data().whatsappNumber) {
                         window.whatsappNumber = docSnap.data().whatsappNumber;
+                        if (window.sqliteDb) {
+                            window.sqliteDb.run("INSERT OR REPLACE INTO config (key, value) VALUES ('whatsapp_number', ?)", [window.whatsappNumber]);
+                            if (window.saveSQLToStorage) window.saveSQLToStorage();
+                        }
                         const phoneInput = document.getElementById('admin-phone-input');
                         if (phoneInput) phoneInput.value = window.whatsappNumber;
                     }
@@ -105,7 +105,7 @@
         initCloudSync();
     </script>
 
-    <!-- SQL.js para soporte de Base de Datos SQL cliente -->
+    <!-- SQL.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
 
     <style>
@@ -134,7 +134,6 @@
             border-color: rgba(250, 204, 21, 0.4);
             box-shadow: 0 10px 30px -10px rgba(234, 179, 8, 0.15);
         }
-        /* Pulse Animation for WhatsApp Badge */
         @keyframes customPulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.15); }
@@ -150,7 +149,6 @@
     <header class="fixed top-0 left-0 w-full z-40 bg-dark-900/90 backdrop-blur-md border-b border-dark-700">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16 sm:h-20">
-                <!-- Brand Logo -->
                 <a href="#" class="flex items-center gap-2.5 sm:gap-3">
                     <span class="w-8 h-8 sm:w-10 sm:h-10 rounded-full gold-gradient-bg flex items-center justify-center text-dark-900 font-serif-title font-bold text-lg sm:text-xl shadow-lg shadow-gold-500/20 shrink-0">L</span>
                     <div class="flex flex-col">
@@ -159,14 +157,12 @@
                     </div>
                 </a>
 
-                <!-- Desktop Nav Links -->
                 <nav class="hidden lg:flex items-center gap-8 text-sm font-medium tracking-wide">
                     <a href="#catalogo" class="hover:text-gold-400 transition-colors py-2">Catálogo</a>
                     <a href="#servicios" class="hover:text-gold-400 transition-colors py-2">Experiencia Exclusiva</a>
                     <a href="#contacto" class="hover:text-gold-400 transition-colors py-2">Contacto</a>
                 </nav>
 
-                <!-- Action Button & Cart -->
                 <div class="hidden lg:flex items-center gap-4">
                     <button onclick="toggleCartModal()" class="relative p-2.5 rounded-full bg-dark-800 hover:bg-dark-700 border border-dark-600 text-gold-400 transition-all">
                         <i class="fa-solid fa-cart-shopping text-lg"></i>
@@ -177,7 +173,6 @@
                     </a>
                 </div>
 
-                <!-- Mobile & Tablet Menu Button -->
                 <div class="lg:hidden flex items-center gap-2 sm:gap-3">
                     <button onclick="toggleCartModal()" class="relative p-2.5 rounded-full bg-dark-800 text-gold-400 border border-dark-700 min-w-[40px] min-h-[40px] flex items-center justify-center">
                         <i class="fa-solid fa-cart-shopping"></i>
@@ -190,7 +185,6 @@
             </div>
         </div>
 
-        <!-- Mobile / Tablet Menu Dropdown -->
         <div id="mobile-menu" class="hidden lg:hidden bg-dark-800 border-b border-dark-700 px-4 pt-3 pb-6 space-y-2 text-center text-sm font-medium">
             <a href="#catalogo" onclick="closeMobileMenu()" class="block py-2.5 text-gray-300 hover:text-gold-400 hover:bg-dark-700/50 rounded-lg">Catálogo</a>
             <a href="#servicios" onclick="closeMobileMenu()" class="block py-2.5 text-gray-300 hover:text-gold-400 hover:bg-dark-700/50 rounded-lg">Experiencia Exclusiva</a>
@@ -203,7 +197,6 @@
         <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 sm:w-96 h-72 sm:h-96 bg-gold-600/15 rounded-full blur-[100px] sm:blur-[120px] pointer-events-none"></div>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-center">
-                
                 <div class="text-center md:text-left space-y-4 sm:space-y-6">
                     <div class="inline-flex items-center gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-400 text-[11px] sm:text-xs font-semibold uppercase tracking-wider">
                         <i class="fa-solid fa-crown text-[10px] sm:text-xs"></i> Colección Privada 2026
@@ -224,7 +217,6 @@
                     </div>
                 </div>
 
-                <!-- Hero Image Showcase -->
                 <div class="relative flex justify-center mt-4 md:mt-0">
                     <div class="relative w-full max-w-xs sm:max-w-md aspect-square rounded-2xl sm:rounded-3xl overflow-hidden glass-card p-3 sm:p-4">
                         <img src="https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=800&auto=format&fit=crop" alt="Perfume Luxury Aura" class="w-full h-full object-cover rounded-xl sm:rounded-2xl shadow-2xl">
@@ -235,7 +227,6 @@
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </section>
@@ -247,7 +238,6 @@
                 <h2 class="font-serif-title text-2xl sm:text-4xl font-bold text-white mb-3 sm:mb-4">Nuestra Selección de <span class="gold-gradient-text">Alta Perfumería</span></h2>
                 <p class="text-gray-400 text-xs sm:text-base">Explora las creaciones más codiciadas de nuestra casa perfumista.</p>
                 
-                <!-- Category Filters -->
                 <div class="flex flex-wrap justify-center gap-2 sm:gap-3 mt-6 sm:mt-8">
                     <button onclick="filterProducts('todos', event)" class="filter-btn active px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-gold-500 text-dark-900 transition-all min-h-[38px]">Todos</button>
                     <button onclick="filterProducts('oriental', event)" class="filter-btn px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-dark-700 text-gray-300 hover:text-white transition-all min-h-[38px]">Orientales</button>
@@ -256,9 +246,8 @@
                 </div>
             </div>
 
-            <!-- Product Grid -->
             <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                <!-- Products injected dynamically via JavaScript -->
+                <!-- Products injected dynamically -->
             </div>
         </div>
     </section>
@@ -313,7 +302,6 @@
             </div>
 
             <div class="space-y-6 sm:space-y-8">
-                <!-- WhatsApp Config Box -->
                 <div class="glass-card p-4 sm:p-6 rounded-xl">
                     <h3 class="font-serif-title text-base sm:text-lg font-bold text-gold-400 mb-2 flex items-center gap-2">
                         <i class="fa-brands fa-whatsapp text-green-500"></i> Configuración de WhatsApp
@@ -327,7 +315,6 @@
                     </div>
                 </div>
 
-                <!-- Add Product Box -->
                 <div class="glass-card p-4 sm:p-6 rounded-xl">
                     <h3 class="font-serif-title text-base sm:text-lg font-bold text-gold-400 mb-4 flex items-center gap-2">
                         <i class="fa-solid fa-plus-circle"></i> Agregar Nuevo Perfume
@@ -347,7 +334,6 @@
                         <div>
                             <input type="text" id="prod-family" placeholder="Familia Olfativa (ej. Madera Noble)" required class="w-full bg-dark-900 border border-dark-600 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-gold-400">
                         </div>
-                        <!-- File Upload input or Image URL -->
                         <div class="space-y-2">
                             <label class="block text-[11px] text-gray-400 font-medium">Imagen del Perfume:</label>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -469,10 +455,6 @@
         let cart = [];
         let whatsappNumber = "5492615960049";
         let uploadedImageBase64 = "";
-
-        // ==========================================
-        // SQL DATABASE (SQL.js SQLite Implementation)
-        // ==========================================
         let db = null;
 
         const defaultPerfumes = [
@@ -518,20 +500,29 @@
                 };
                 const SQL = await initSqlJs(config);
 
-                // Recuperar DB binaria del almacenamiento si existe
                 const savedDb = localStorage.getItem('sqlite_db_binary');
                 if (savedDb) {
-                    const uInt8Array = new Uint8Array(JSON.parse(savedDb));
-                    db = new SQL.Database(uInt8Array);
+                    try {
+                        const uInt8Array = new Uint8Array(JSON.parse(savedDb));
+                        db = new SQL.Database(uInt8Array);
+                        window.sqliteDb = db;
+                    } catch (e) {
+                        console.error("Error al cargar la DB guardada:", e);
+                        db = new SQL.Database();
+                        window.sqliteDb = db;
+                        createTables();
+                        seedDatabase();
+                    }
                 } else {
                     db = new SQL.Database();
+                    window.sqliteDb = db;
                     createTables();
                     seedDatabase();
                 }
 
                 loadDataFromSQL();
             } catch (err) {
-                console.error("Error inicializando SQL.js, reintentando con fallback:", err);
+                console.error("Error inicializando SQL.js, usando fallback:", err);
                 fallbackLocalStorage();
             }
         }
@@ -565,7 +556,7 @@
             db.run("INSERT OR REPLACE INTO config (key, value) VALUES ('whatsapp_number', '5492615960049');");
             
             const stmt = db.prepare(`
-                INSERT INTO perfumes (id, name, category, family, rating, badge, price, img, desc)
+                INSERT OR IGNORE INTO perfumes (id, name, category, family, rating, badge, price, img, desc)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             `);
 
@@ -579,14 +570,19 @@
 
         function saveSQLToStorage() {
             if (!db) return;
-            const binaryArray = db.export();
-            localStorage.setItem('sqlite_db_binary', JSON.stringify(Array.from(binaryArray)));
+            try {
+                const binaryArray = db.export();
+                localStorage.setItem('sqlite_db_binary', JSON.stringify(Array.from(binaryArray)));
+            } catch (e) {
+                console.error("Error guardando DB SQL:", e);
+            }
         }
+        window.saveSQLToStorage = saveSQLToStorage;
 
         function loadDataFromSQL() {
             if (!db) return;
 
-            // Cargar Configuración
+            // Configuración
             const resConfig = db.exec("SELECT value FROM config WHERE key = 'whatsapp_number'");
             if (resConfig.length > 0 && resConfig[0].values.length > 0) {
                 whatsappNumber = resConfig[0].values[0][0];
@@ -594,7 +590,7 @@
 
             // Cargar Perfumes
             perfumes = [];
-            const resPerfumes = db.exec("SELECT id, name, category, family, rating, badge, price, img, desc FROM perfumes ORDER BY id DESC");
+            const resPerfumes = db.exec("SELECT id, name, category, family, rating, badge, price, img, desc FROM perfumes");
             if (resPerfumes.length > 0) {
                 resPerfumes[0].values.forEach(row => {
                     perfumes.push({
@@ -676,12 +672,11 @@
                     saveSQLToStorage();
                 }
 
-                // Guardar en la nube en tiempo real para todos los dispositivos
                 if (window.saveWhatsAppToCloud) {
                     window.saveWhatsAppToCloud(whatsappNumber);
                 }
 
-                alert('Número de WhatsApp sincronizado globalmente para todos los dispositivos: ' + whatsappNumber);
+                alert('Número de WhatsApp sincronizado globalmente: ' + whatsappNumber);
                 closeAdminPanel();
             }
         }
@@ -806,7 +801,7 @@
             const product = perfumes.find(p => p.id === id);
             if (!product) return;
             
-            const existing = cart.find(item => item.id === item.id && item.id === id);
+            const existing = cart.find(item => item.id === id);
             const newQty = existing ? existing.qty + 1 : 1;
 
             if (db) {
