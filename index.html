@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leandro Morales Perfumería - Perfumería de Autor</title>
-     <a href="https://wa.me/5492615960049"> </a> 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -344,7 +343,7 @@
                     <span class="text-gray-300">Total:</span>
                     <span id="cart-total" class="gold-gradient-text">$0</span>
                 </div>
-                <button onclick="confirmOrder()"class="w-full gold-gradient-bg text-dark-900 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg hover:opacity-95 transition-all text-sm sm:text-base">
+                <button onclick="confirmOrder()" class="w-full gold-gradient-bg text-dark-900 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg hover:opacity-95 transition-all text-sm sm:text-base">
                     <i class="fa-solid fa-bag-shopping text-lg"></i> Finalizar Pedido
                 </button>
             </div>
@@ -745,14 +744,31 @@
                 return;
             }
 
-            alert('¡Gracias por tu pedido! Nos pondremos en contacto contigo a la brevedad para coordinar el pago y la entrega.');
-            
+            // Construir el mensaje formateado para WhatsApp
+            let total = 0;
+            let itemsText = "";
+
+            cart.forEach(item => {
+                const subtotal = item.price * item.qty;
+                total += subtotal;
+                itemsText += `• *${item.name}* x${item.qty} - $${subtotal}\n`;
+            });
+
+            const message = `*¡Hola! Quiero finalizar mi pedido en Leandro Morales Perfumería:*\n\n${itemsText}\n*Total:* $${total}\n\nQuedo a la espera de sus instrucciones para realizar el pago y envío.`;
+
+            const phone = "5492615960049";
+            const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+
+            // Limpiar el carrito en la base de datos SQL
             if (db) {
                 db.run("DELETE FROM cart");
                 saveSQLToStorage();
             }
             loadDataFromSQL();
             toggleCartModal();
+
+            // Abrir WhatsApp en una nueva pestaña
+            window.open(whatsappUrl, '_blank');
         }
 
         document.addEventListener('DOMContentLoaded', () => {
