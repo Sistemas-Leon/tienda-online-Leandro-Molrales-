@@ -494,7 +494,23 @@
                 if (labelText) labelText.innerText = file.name;
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    uploadedImageBase64 = e.target.result;
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        const MAX_WIDTH = 600;
+                        const scaleSize = MAX_WIDTH / img.width;
+                        if (scaleSize < 1) {
+                            canvas.width = MAX_WIDTH;
+                            canvas.height = img.height * scaleSize;
+                        } else {
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                        }
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        uploadedImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                    };
+                    img.src = e.target.result;
                 };
                 reader.readAsDataURL(file);
             }
@@ -509,12 +525,12 @@
             }
 
             try {
-                const name = document.getElementById('prod-name').value;
+                const name = document.getElementById('prod-name').value.trim();
                 const category = document.getElementById('prod-category').value;
                 const price = parseFloat(document.getElementById('prod-price').value) || 0;
-                const family = document.getElementById('prod-family').value;
-                const urlImg = document.getElementById('prod-img').value;
-                const desc = document.getElementById('prod-desc').value;
+                const family = document.getElementById('prod-family').value.trim();
+                const urlImg = document.getElementById('prod-img').value.trim();
+                const desc = document.getElementById('prod-desc').value.trim();
 
                 const img = uploadedImageBase64 || urlImg || "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=800&auto=format&fit=crop";
                 const id = String(Date.now());
@@ -522,6 +538,11 @@
                 const badge = "Edición Limitada";
 
                 const newPerfume = { id, name, category, family, rating, badge, price, img, desc };
+
+                // Verificar que las referencias globales de Firestore están cargadas
+                if (!window.db || !window.setDoc || !window.doc) {
+                    throw new Error("Conexión a la base de datos no inicializada completamente.");
+                }
 
                 // Guardar en Firestore directamente
                 await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'perfumes', id), newPerfume);
@@ -536,7 +557,7 @@
                 alert('¡Nuevo perfume publicado con éxito! Ahora es visible en todos los dispositivos.');
             } catch (err) {
                 console.error("Error al publicar perfume:", err);
-                alert("Hubo un problema al guardar el perfume en la nube: " + err.message);
+                alert("Hubo un problema al guardar el perfume en la nube: " + (err.message || err));
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;
