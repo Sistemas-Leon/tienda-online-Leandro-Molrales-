@@ -316,7 +316,7 @@
                                 <option value="floral">Floral</option>
                                 <option value="fresco">Fresco</option>
                             </select>
-                            <input type="number" id="prod-price" placeholder="Precio ($)" required class="bg-dark-900 border border-dark-600 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-gold-400">
+                            <input type="number" step="0.01" id="prod-price" placeholder="Precio ($)" required class="bg-dark-900 border border-dark-600 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-gold-400">
                         </div>
                         <div>
                             <input type="text" id="prod-family" placeholder="Familia Olfativa (ej. Madera Noble)" required class="w-full bg-dark-900 border border-dark-600 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-gold-400">
@@ -337,7 +337,7 @@
                         <div>
                             <textarea id="prod-desc" placeholder="Descripción breve" rows="2" required class="w-full bg-dark-900 border border-dark-600 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-gold-400"></textarea>
                         </div>
-                        <button type="submit" class="w-full bg-gold-600 hover:bg-gold-500 text-dark-900 py-3 rounded-lg font-bold text-xs uppercase tracking-wider transition-all">
+                        <button type="submit" id="prod-submit-btn" class="w-full bg-gold-600 hover:bg-gold-500 text-dark-900 py-3 rounded-lg font-bold text-xs uppercase tracking-wider transition-all">
                             Publicar Perfume
                         </button>
                     </form>
@@ -502,32 +502,46 @@
 
         async function addNewProduct(e) {
             e.preventDefault();
-            const name = document.getElementById('prod-name').value;
-            const category = document.getElementById('prod-category').value;
-            const price = parseFloat(document.getElementById('prod-price').value);
-            const family = document.getElementById('prod-family').value;
-            const urlImg = document.getElementById('prod-img').value;
-            const desc = document.getElementById('prod-desc').value;
-
-            const img = uploadedImageBase64 || urlImg || "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=800&auto=format&fit=crop";
-            const id = String(Date.now());
-            const rating = "5.0";
-            const badge = "Edición Limitada";
-
-            const newPerfume = { id, name, category, family, rating, badge, price, img, desc };
+            const submitBtn = document.getElementById('prod-submit-btn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerText = "Publicando...";
+            }
 
             try {
+                const name = document.getElementById('prod-name').value;
+                const category = document.getElementById('prod-category').value;
+                const price = parseFloat(document.getElementById('prod-price').value) || 0;
+                const family = document.getElementById('prod-family').value;
+                const urlImg = document.getElementById('prod-img').value;
+                const desc = document.getElementById('prod-desc').value;
+
+                const img = uploadedImageBase64 || urlImg || "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=800&auto=format&fit=crop";
+                const id = String(Date.now());
+                const rating = "5.0";
+                const badge = "Edición Limitada";
+
+                const newPerfume = { id, name, category, family, rating, badge, price, img, desc };
+
+                // Guardar en Firestore directamente
                 await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'perfumes', id), newPerfume);
+                
+                // Limpiar formulario y variables
                 e.target.reset();
                 uploadedImageBase64 = "";
                 const labelText = document.getElementById('file-label-text');
                 if (labelText) labelText.innerText = "Subir desde tu equipo";
 
-                alert('¡Nuevo perfume guardado en la Nube con éxito! Ahora es visible en todos los dispositivos.');
                 closeAdminPanel();
+                alert('¡Nuevo perfume publicado con éxito! Ahora es visible en todos los dispositivos.');
             } catch (err) {
                 console.error("Error al publicar perfume:", err);
-                alert("Hubo un problema al guardar el perfume en la nube.");
+                alert("Hubo un problema al guardar el perfume en la nube: " + err.message);
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = "Publicar Perfume";
+                }
             }
         }
 
