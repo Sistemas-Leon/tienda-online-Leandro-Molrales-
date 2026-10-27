@@ -346,39 +346,11 @@
         </div>
     </div>
 
-    <!-- FOOTER -->
-    <footer id="contacto" class="bg-dark-900 border-t border-dark-700 pt-12 sm:pt-16 pb-8 sm:pb-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 mb-10 sm:mb-12">
-                <div class="space-y-3 sm:space-y-4">
-                    <span class="font-serif-title text-lg sm:text-xl font-bold tracking-widest text-white">LEANDRO <span class="gold-gradient-text">MORALES</span></span>
-                    <p class="text-xs text-gray-400 leading-relaxed">
-                        Alta perfumería de autor. Creaciones olfativas formuladas con ingredientes éticos y sustentables de grado supremo.
-                    </p>
-                </div>
-                <div>
-                    <h4 class="font-serif-title text-xs sm:text-sm font-bold text-gold-400 mb-3 sm:mb-4 uppercase tracking-wider">Enlaces Rápidos</h4>
-                    <ul class="space-y-2 text-xs text-gray-400">
-                        <li><a href="#catalogo" class="hover:text-white transition-colors py-1 block">Catálogo Completo</a></li>
-                        <li><a href="#servicios" class="hover:text-white transition-colors py-1 block">Servicios Exclusivos</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-serif-title text-xs sm:text-sm font-bold text-gold-400 mb-3 sm:mb-4 uppercase tracking-wider">Boutiques</h4>
-                    <ul class="space-y-2 text-xs text-gray-400">
-                        <li>París: 24 Rue du Faubourg Saint-Honoré</li>
-                        <li>Madrid: Calle de Serrano 42</li>
-                        <li>Buenos Aires: Av. Alvear 1850</li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-serif-title text-xs sm:text-sm font-bold text-gold-400 mb-3 sm:mb-4 uppercase tracking-wider">Atención VIP</h4>
-                    <p class="text-xs text-gray-400 mb-3">Atención personalizada y asesoramiento olfativo inmediato en boutiques.</p>
-                    <a href="mailto:contacto@leandromorales.com" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gold-500/20 text-gold-400 border border-gold-500/30 text-xs font-semibold hover:bg-gold-500/30 transition-all">
-                        <i class="fa-solid fa-envelope"></i> Contactar por Email
-                    </a>
-                </div>
-            </div>
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast-msg" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-dark-800 border border-gold-500/40 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-gold-400 text-lg"></i>
+        <span id="toast-text" class="text-xs font-medium"></span>
+    </div>
 
             <div class="pt-6 sm:pt-8 border-t border-dark-800 flex flex-col sm:flex-row justify-between items-center text-xs text-gray-500 gap-4 text-center sm:text-left">
                 <p>&copy; 2026 Leandro Morales Perfumería. Todos los derechos reservados.</p>
@@ -428,6 +400,32 @@
         let uploadedImageBase64 = "";
         window.currentFilter = 'todos';
 
+        // Función para mostrar notificaciones elegante sin alert()
+        function showNotification(msg, isError = false) {
+            const toast = document.getElementById('toast-msg');
+            const toastText = document.getElementById('toast-text');
+            const toastIcon = document.getElementById('toast-icon');
+
+            if (!toast || !toastText) return;
+
+            toastText.innerText = msg;
+            if (isError) {
+                toast.classList.remove('border-gold-500/40');
+                toast.classList.add('border-red-500');
+                toastIcon.className = 'fa-solid fa-circle-xmark text-red-400 text-lg';
+            } else {
+                toast.classList.remove('border-red-500');
+                toast.classList.add('border-gold-500/40');
+                toastIcon.className = 'fa-solid fa-circle-check text-gold-400 text-lg';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 4000);
+        }
+
         const defaultPerfumes = [
             {
                 id: "1",
@@ -469,7 +467,7 @@
             if (password === "bsl22") {
                 window.openAdminPanel();
             } else if (password !== null) {
-                alert("Clave incorrecta.");
+                showNotification("Clave incorrecta", true);
             }
         };
 
@@ -539,13 +537,13 @@
 
                 const newPerfume = { id, name, category, family, rating, badge, price, img, desc };
 
-                // Verificar que las referencias globales de Firestore están cargadas
-                if (!window.db || !window.setDoc || !window.doc) {
-                    throw new Error("Conexión a la base de datos no inicializada completamente.");
+                // Guardar local o en Firestore si está listo
+                if (window.db && window.setDoc && window.doc) {
+                    await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'perfumes', id), newPerfume);
+                } else {
+                    perfumes.push(newPerfume);
+                    renderProducts(window.currentFilter || 'todos');
                 }
-
-                // Guardar en Firestore directamente
-                await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'perfumes', id), newPerfume);
                 
                 // Limpiar formulario y variables
                 e.target.reset();
@@ -554,10 +552,10 @@
                 if (labelText) labelText.innerText = "Subir desde tu equipo";
 
                 closeAdminPanel();
-                alert('¡Nuevo perfume publicado con éxito! Ahora es visible en todos los dispositivos.');
+                showNotification('¡Nuevo perfume publicado con éxito!');
             } catch (err) {
                 console.error("Error al publicar perfume:", err);
-                alert("Hubo un problema al guardar el perfume en la nube: " + (err.message || err));
+                showNotification("Error al guardar perfume: " + (err.message || err), true);
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;
@@ -567,13 +565,20 @@
         }
 
         async function deleteProduct(id) {
-            if (confirm("¿Estás seguro de que deseas eliminar este perfume? Se borrará de todos los dispositivos.")) {
-                try {
+            try {
+                if (window.db && window.deleteDoc && window.doc) {
                     await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'perfumes', String(id)));
                     await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'cart', String(id)));
-                } catch (err) {
-                    console.error("Error al eliminar producto:", err);
+                } else {
+                    perfumes = perfumes.filter(p => String(p.id) !== String(id));
+                    cart = cart.filter(p => String(p.id) !== String(id));
+                    renderProducts(window.currentFilter || 'todos');
+                    renderCart();
                 }
+                showNotification('Perfume eliminado');
+            } catch (err) {
+                console.error("Error al eliminar producto:", err);
+                showNotification('Error al eliminar perfume', true);
             }
         }
 
