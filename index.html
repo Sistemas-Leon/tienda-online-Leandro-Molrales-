@@ -355,13 +355,38 @@
             <div class="pt-6 sm:pt-8 border-t border-dark-800 flex flex-col sm:flex-row justify-between items-center text-xs text-gray-500 gap-4 text-center sm:text-left">
                 <p>&copy; 2026 Leandro Morales Perfumería. Todos los derechos reservados.</p>
                 <div class="flex items-center gap-4">
-                    <button onclick="promptAdminPassword()" class="hover:text-gold-400 transition-colors flex items-center gap-1.5 py-1">
+                    <button onclick="openAdminLoginModal()" class="hover:text-gold-400 transition-colors flex items-center gap-1.5 py-1">
                         <i class="fa-solid fa-lock text-[10px]"></i> Administrar Tienda
                     </button>
                 </div>
             </div>
         </div>
     </footer>
+
+    <!-- ADMIN LOGIN MODAL -->
+    <div id="admin-login-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300 flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-dark-800 rounded-2xl p-6 border border-gold-500/30 shadow-2xl relative text-center">
+            <button onclick="closeAdminLoginModal()" aria-label="Cerrar modal" class="absolute top-3 right-3 text-gray-400 hover:text-white text-lg p-1.5 rounded-lg hover:bg-dark-700">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div class="w-12 h-12 rounded-full gold-gradient-bg flex items-center justify-center text-dark-900 text-xl mx-auto mb-4 shadow-lg shadow-gold-500/20">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            
+            <h3 class="font-serif-title text-xl font-bold text-white mb-1">Acceso Administrativo</h3>
+            <p class="text-xs text-gray-400 mb-6">Ingresa la clave para acceder al panel de control</p>
+            
+            <form onsubmit="verifyAdminPassword(event)" class="space-y-4">
+                <div>
+                    <input type="password" id="admin-password-input" placeholder="Clave de administración" required class="w-full bg-dark-900 border border-dark-600 rounded-xl p-3 text-sm text-center text-white focus:outline-none focus:border-gold-400 tracking-wider">
+                </div>
+                <button type="submit" class="w-full gold-gradient-bg text-dark-900 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:opacity-95 shadow-md">
+                    Ingresar
+                </button>
+            </form>
+        </div>
+    </div>
 
     <!-- CART MODAL -->
     <div id="cart-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300 flex justify-end">
@@ -429,14 +454,14 @@
         const defaultPerfumes = [
             {
                 id: "1",
-                name: "Ébano & Amber Royal",
-                category: "oriental",
+                name: "9AM DIVE-AFNAN-100ml",
+                category: "Árabe",
                 family: "Amaderado Oriental",
                 rating: "4.9",
                 badge: "Bestseller",
-                price: 185,
+                price: 46.000,
                 img: "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=800&auto=format&fit=crop",
-                desc: "Un acorde suntuoso de ébano ahumado, ámbar cálido y notas de resina dorada."
+                desc: "9am Dive de Afnan es una fragancia de la familia olfativa Aromática Acuática para Hombres y Mujeres. 9am Dive se lanzó en 2022. Las Notas de Salida son limón (lima ácida), menta, grosellas negras y pimienta rosa; las Notas de Corazón son manzana, cedro y incienso; las Notas de Fondo son jengibre, sándalo, pachulí y jazmín."
             },
             {
                 id: "2",
@@ -459,15 +484,54 @@
                 price: 165,
                 img: "https://images.unsplash.com/photo-1547887537-6158d64c35b3?q=80&w=800&auto=format&fit=crop",
                 desc: "Bergamota de Calabria combinada con cedro del Atlas y pimienta rosa chispeante."
+            },
+            {
+                id: "4",
+                name: "Santal Impérial & Cuir",
+                category: "oriental",
+                family: "Madera & Cuero Noble",
+                rating: "5.0",
+                badge: "Edición Limitada",
+                price: 240,
+                img: "https://images.unsplash.com/photo-1523293182086-7651a899d37f?q=80&w=800&auto=format&fit=crop",
+                desc: "Esencia refinada de sándalo australiano, acordes de cuero suave y toques de especias de oriente."
             }
         ];
 
-        window.promptAdminPassword = function() {
-            const password = prompt("Ingresa la clave de administración:");
+        window.openAdminLoginModal = function() {
+            const modal = document.getElementById('admin-login-modal');
+            const input = document.getElementById('admin-password-input');
+            if (modal) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+            }
+            if (input) {
+                input.value = '';
+                setTimeout(() => input.focus(), 100);
+            }
+        };
+
+        window.closeAdminLoginModal = function() {
+            const modal = document.getElementById('admin-login-modal');
+            if (modal) {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+            }
+        };
+
+        window.verifyAdminPassword = function(e) {
+            e.preventDefault();
+            const input = document.getElementById('admin-password-input');
+            const password = input ? input.value : '';
+
             if (password === "bsl22") {
+                closeAdminLoginModal();
                 window.openAdminPanel();
-            } else if (password !== null) {
+                showNotification("Acceso concedido al Panel de Administración");
+            } else {
                 showNotification("Clave incorrecta", true);
+                if (input) {
+                    input.value = '';
+                    input.focus();
+                }
             }
         };
 
@@ -530,6 +594,11 @@
                 const urlImg = document.getElementById('prod-img').value.trim();
                 const desc = document.getElementById('prod-desc').value.trim();
 
+                if (!name || !desc || !family || price <= 0) {
+                    showNotification("Por favor completa todos los campos requeridos.", true);
+                    return;
+                }
+
                 const img = uploadedImageBase64 || urlImg || "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=800&auto=format&fit=crop";
                 const id = String(Date.now());
                 const rating = "5.0";
@@ -537,15 +606,24 @@
 
                 const newPerfume = { id, name, category, family, rating, badge, price, img, desc };
 
-                // Guardar local o en Firestore si está listo
+                // Intento de guardado en Firestore con fallback a estado local inmediato
+                let savedInCloud = false;
                 if (window.db && window.setDoc && window.doc) {
-                    await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'perfumes', id), newPerfume);
-                } else {
-                    perfumes.push(newPerfume);
+                    try {
+                        await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'perfumes', id), newPerfume);
+                        savedInCloud = true;
+                    } catch (cloudErr) {
+                        console.warn("No se pudo guardar en la nube, usando almacenamiento local de respaldo:", cloudErr);
+                    }
+                }
+
+                if (!savedInCloud) {
+                    // Si falla la nube, agregar directamente al catálogo local y renderizar
+                    perfumes.unshift(newPerfume);
                     renderProducts(window.currentFilter || 'todos');
                 }
                 
-                // Limpiar formulario y variables
+                // Limpiar formulario y variables de estado
                 e.target.reset();
                 uploadedImageBase64 = "";
                 const labelText = document.getElementById('file-label-text');
