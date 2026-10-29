@@ -85,6 +85,7 @@
                     } else if (!snapshot.empty) {
                         perfumes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                         renderProducts(window.currentFilter || 'todos');
+                        renderHomeProducts();
                         populateOrderPerfumesSelect();
                     }
                 }, (error) => {
@@ -158,7 +159,7 @@
     <header class="fixed top-0 left-0 w-full z-40 bg-dark-900/90 backdrop-blur-md border-b border-dark-700">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16 sm:h-20">
-                <a href="#" class="flex items-center gap-2.5 sm:gap-3">
+                <a href="#" onclick="navigateTo('home')" class="flex items-center gap-2.5 sm:gap-3">
                     <span class="w-8 h-8 sm:w-10 sm:h-10 rounded-full gold-gradient-bg flex items-center justify-center text-dark-900 font-serif-title font-bold text-lg sm:text-xl shadow-lg shadow-gold-500/20 shrink-0">L</span>
                     <div class="flex flex-col">
                         <span class="font-serif-title text-base sm:text-xl font-bold tracking-widest text-white leading-tight">LEANDRO <span class="gold-gradient-text">MORALES</span></span>
@@ -167,9 +168,10 @@
                 </a>
 
                 <nav class="hidden lg:flex items-center gap-8 text-sm font-medium tracking-wide">
-                    <a href="#catalogo" class="hover:text-gold-400 transition-colors py-2">Catálogo</a>
-                    <a href="#servicios" class="hover:text-gold-400 transition-colors py-2">Experiencia Exclusiva</a>
-                    <a href="#contacto" class="hover:text-gold-400 transition-colors py-2">Contacto</a>
+                    <button onclick="navigateTo('home')" class="nav-link hover:text-gold-400 transition-colors py-2 active-nav">Inicio</button>
+                    <button onclick="navigateTo('catalogo')" class="nav-link hover:text-gold-400 transition-colors py-2">Catálogo</button>
+                    <button onclick="navigateTo('experiencia')" class="nav-link hover:text-gold-400 transition-colors py-2">Experiencia VIP</button>
+                    <button onclick="navigateTo('contacto')" class="nav-link hover:text-gold-400 transition-colors py-2">Contacto</button>
                 </nav>
 
                 <div class="hidden lg:flex items-center gap-4">
@@ -177,9 +179,9 @@
                         <i class="fa-solid fa-cart-shopping text-lg"></i>
                         <span id="cart-badge" class="absolute -top-1 -right-1 bg-gold-500 text-dark-900 text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">0</span>
                     </button>
-                    <a href="#catalogo" class="gold-gradient-bg text-dark-900 px-5 py-2.5 rounded-full font-semibold text-sm hover:opacity-95 transition-all shadow-md shadow-gold-500/10">
+                    <button onclick="navigateTo('catalogo')" class="gold-gradient-bg text-dark-900 px-5 py-2.5 rounded-full font-semibold text-sm hover:opacity-95 transition-all shadow-md shadow-gold-500/10">
                         Explorar Fragancias
-                    </a>
+                    </button>
                 </div>
 
                 <div class="lg:hidden flex items-center gap-2 sm:gap-3">
@@ -195,107 +197,172 @@
         </div>
 
         <div id="mobile-menu" class="hidden lg:hidden bg-dark-800 border-b border-dark-700 px-4 pt-3 pb-6 space-y-2 text-center text-sm font-medium">
-            <a href="#catalogo" onclick="closeMobileMenu()" class="block py-2.5 text-gray-300 hover:text-gold-400 hover:bg-dark-700/50 rounded-lg">Catálogo</a>
-            <a href="#servicios" onclick="closeMobileMenu()" class="block py-2.5 text-gray-300 hover:text-gold-400 hover:bg-dark-700/50 rounded-lg">Experiencia Exclusiva</a>
-            <a href="#contacto" onclick="closeMobileMenu()" class="block py-2.5 text-gray-300 hover:text-gold-400 hover:bg-dark-700/50 rounded-lg">Contacto</a>
+            <button onclick="navigateTo('home'); closeMobileMenu();" class="block w-full py-2.5 text-gray-300 hover:text-gold-400 hover:bg-dark-700/50 rounded-lg">Inicio</button>
+            <button onclick="navigateTo('catalogo'); closeMobileMenu();" class="block w-full py-2.5 text-gray-300 hover:text-gold-400 hover:bg-dark-700/50 rounded-lg">Catálogo Completo</button>
+            <button onclick="navigateTo('experiencia'); closeMobileMenu();" class="block w-full py-2.5 text-gray-300 hover:text-gold-400 hover:bg-dark-700/50 rounded-lg">Experiencia Exclusiva</button>
+            <button onclick="navigateTo('contacto'); closeMobileMenu();" class="block w-full py-2.5 text-gray-300 hover:text-gold-400 hover:bg-dark-700/50 rounded-lg">Contacto</button>
         </div>
     </header>
 
-    <!-- HERO SECTION -->
-    <section class="relative pt-24 pb-14 sm:pt-32 sm:pb-20 md:pt-40 md:pb-28 overflow-hidden">
-        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 sm:w-96 h-72 sm:h-96 bg-gold-600/15 rounded-full blur-[100px] sm:blur-[120px] pointer-events-none"></div>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-center">
-                <div class="text-center md:text-left space-y-4 sm:space-y-6">
-                    <div class="inline-flex items-center gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-400 text-[11px] sm:text-xs font-semibold uppercase tracking-wider">
-                        <i class="fa-solid fa-crown text-[10px] sm:text-xs"></i> Colección Privada 2026
-                    </div>
-                    <h1 class="font-serif-title text-3xl sm:text-5xl lg:text-6xl font-bold leading-tight sm:leading-tight text-white">
-                        La distinción invisible de tu <span class="gold-gradient-text">presencia</span>.
-                    </h1>
-                    <p class="text-gray-400 text-sm sm:text-base lg:text-lg max-w-xl mx-auto md:mx-0 font-light leading-relaxed">
-                        Fragancias exclusivas elaboradas con los extractos más puros y escasos del mundo. Diseñadas para dejar una huella imborrable.
-                    </p>
-                    <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start pt-2">
-                        <a href="#catalogo" class="gold-gradient-bg text-dark-900 px-6 sm:px-8 py-3.5 rounded-full font-bold text-sm sm:text-base hover:shadow-lg hover:shadow-gold-500/20 transition-all text-center">
-                            Ver Catálogo Exclusivo
-                        </a>
-                        <a href="#contacto" class="border border-gold-500/40 hover:border-gold-400 text-gold-400 hover:bg-gold-500/10 px-6 sm:px-8 py-3.5 rounded-full font-medium text-sm sm:text-base transition-all text-center">
-                            Asesoría Personalizada
-                        </a>
-                    </div>
-                </div>
+    <!-- PAGE VIEW ROUTER WRAPPER -->
+    <main id="app-content" class="pt-20">
+        
+        <!-- PAGE 1: HOME PAGE -->
+        <div id="page-home" class="page-section">
+            <!-- HERO SECTION -->
+            <section class="relative pt-12 pb-14 sm:pt-20 sm:pb-20 md:pt-24 md:pb-28 overflow-hidden">
+                <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 sm:w-96 h-72 sm:h-96 bg-gold-600/15 rounded-full blur-[100px] sm:blur-[120px] pointer-events-none"></div>
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-center">
+                        <div class="text-center md:text-left space-y-4 sm:space-y-6">
+                            <div class="inline-flex items-center gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-400 text-[11px] sm:text-xs font-semibold uppercase tracking-wider">
+                                <i class="fa-solid fa-crown text-[10px] sm:text-xs"></i> Colección Privada 2026
+                            </div>
+                            <h1 class="font-serif-title text-3xl sm:text-5xl lg:text-6xl font-bold leading-tight sm:leading-tight text-white">
+                                La distinción invisible de tu <span class="gold-gradient-text">presencia</span>.
+                            </h1>
+                            <p class="text-gray-400 text-sm sm:text-base lg:text-lg max-w-xl mx-auto md:mx-0 font-light leading-relaxed">
+                                Fragancias exclusivas elaboradas con los extractos más puros y escasos del mundo. Diseñadas para dejar una huella imborrable.
+                            </p>
+                            <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start pt-2">
+                                <button onclick="navigateTo('catalogo')" class="gold-gradient-bg text-dark-900 px-6 sm:px-8 py-3.5 rounded-full font-bold text-sm sm:text-base hover:shadow-lg hover:shadow-gold-500/20 transition-all text-center">
+                                    Ver Catálogo Exclusivo
+                                </button>
+                                <button onclick="navigateTo('contacto')" class="border border-gold-500/40 hover:border-gold-400 text-gold-400 hover:bg-gold-500/10 px-6 sm:px-8 py-3.5 rounded-full font-medium text-sm sm:text-base transition-all text-center">
+                                    Asesoría Personalizada
+                                </button>
+                            </div>
+                        </div>
 
-                <div class="relative flex justify-center mt-4 md:mt-0">
-                    <div class="relative w-full max-w-xs sm:max-w-md aspect-square rounded-2xl sm:rounded-3xl overflow-hidden glass-card p-3 sm:p-4">
-                        <img src="https://dcdn-us.mitiendanube.com/stores/007/486/062/categories/screenshot_20260409_001636_samsung-internet-c863b9595acc300a4817800218726678-1920-1920.jpg" alt="Perfume Luxury Aura" class="w-full h-full object-cover rounded-xl sm:rounded-2xl shadow-2xl">
-                        <div class="absolute bottom-4 left-4 right-4 sm:bottom-8 sm:left-8 sm:right-8 p-3 sm:p-4 rounded-xl glass-card border border-gold-500/30 backdrop-blur-md">
-                            <p class="text-[10px] sm:text-xs uppercase tracking-widest text-gold-400 font-semibold">Fragancia de la Semana</p>
-                            <p class="font-serif-title text-base sm:text-lg font-bold text-white">Ébano & Amber Royal</p>
-                            <p class="text-[11px] sm:text-xs text-gray-300">Notas de Ámbar, Oud Dorado & Cardamomo</p>
+                        <div class="relative flex justify-center mt-4 md:mt-0">
+                            <div class="relative w-full max-w-xs sm:max-w-md aspect-square rounded-2xl sm:rounded-3xl overflow-hidden glass-card p-3 sm:p-4">
+                                <img src="https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=800&auto=format&fit=crop" alt="Perfume Luxury Aura" class="w-full h-full object-cover rounded-xl sm:rounded-2xl shadow-2xl">
+                                <div class="absolute bottom-4 left-4 right-4 sm:bottom-8 sm:left-8 sm:right-8 p-3 sm:p-4 rounded-xl glass-card border border-gold-500/30 backdrop-blur-md">
+                                    <p class="text-[10px] sm:text-xs uppercase tracking-widest text-gold-400 font-semibold">Fragancia Destacada</p>
+                                    <p class="font-serif-title text-base sm:text-lg font-bold text-white">Ébano & Amber Royal</p>
+                                    <p class="text-[11px] sm:text-xs text-gray-300">Notas de Ámbar, Oud Dorado & Cardamomo</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- PRODUCT CATALOG SECTION -->
-    <section id="catalogo" class="py-12 sm:py-20 bg-dark-800/50 relative border-t border-dark-700">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-3xl mx-auto mb-8 sm:mb-12">
-                <h2 class="font-serif-title text-2xl sm:text-4xl font-bold text-white mb-3 sm:mb-4">Nuestra Selección de <span class="gold-gradient-text">Alta Perfumería</span></h2>
-                <p class="text-gray-400 text-xs sm:text-base">Explora las creaciones más codiciadas de nuestra casa perfumista.</p>
-                
-                <div class="flex flex-wrap justify-center gap-2 sm:gap-3 mt-6 sm:mt-8">
-                    <button onclick="filterProducts('todos', event)" class="filter-btn active px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-gold-500 text-dark-900 transition-all min-h-[38px]">Todos</button>
-                    <button onclick="filterProducts('oriental', event)" class="filter-btn px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-dark-700 text-gray-300 hover:text-white transition-all min-h-[38px]">Orientales</button>
-                    <button onclick="filterProducts('floral', event)" class="filter-btn px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-dark-700 text-gray-300 hover:text-white transition-all min-h-[38px]">Florales Nobles</button>
-                    <button onclick="filterProducts('fresco', event)" class="filter-btn px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-dark-700 text-gray-300 hover:text-white transition-all min-h-[38px]">Cítricos Frescos</button>
-                </div>
-            </div>
-
-            <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                <!-- Products injected dynamically -->
-            </div>
-        </div>
-    </section>
-
-    <!-- SERVICES SECTION -->
-    <section id="servicios" class="py-12 sm:py-20 relative">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
-                <h2 class="font-serif-title text-2xl sm:text-4xl font-bold text-white mb-3 sm:mb-4">Servicios <span class="gold-gradient-text">Exclusivos</span></h2>
-                <p class="text-gray-400 text-xs sm:text-base">Elevamos la compra de tu fragancia a una experiencia sensorial única.</p>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                <div class="glass-card p-6 sm:p-8 rounded-2xl transition-all duration-300 hover:-translate-y-1 sm:hover:-translate-y-2">
-                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl gold-gradient-bg flex items-center justify-center text-dark-900 text-xl sm:text-2xl mb-4 sm:mb-6 shadow-lg shadow-gold-500/20">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+            </section>
+            
+            <!-- HOME HIGHLIGHTS CATALOG -->
+            <section class="py-12 bg-dark-800/40 border-t border-dark-700">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex justify-between items-end mb-8">
+                        <div>
+                            <h2 class="font-serif-title text-2xl sm:text-3xl font-bold text-white">Destacados de la Casa</h2>
+                            <p class="text-xs sm:text-sm text-gray-400">Selección de nuestras creaciones más icónicas</p>
+                        </div>
+                        <button onclick="navigateTo('catalogo')" class="text-xs sm:text-sm text-gold-400 hover:underline flex items-center gap-1 font-semibold">
+                            Ver todos <i class="fa-solid fa-arrow-right text-xs"></i>
+                        </button>
                     </div>
-                    <h3 class="font-serif-title text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3">Bespoke Perfumery</h3>
-                    <p class="text-gray-400 text-xs sm:text-sm leading-relaxed">Creación de fragancias exclusivas y personalizadas adaptadas a la química de tu piel y preferencias de personalidad.</p>
-                </div>
-
-                <div class="glass-card p-6 sm:p-8 rounded-2xl transition-all duration-300 hover:-translate-y-1 sm:hover:-translate-y-2">
-                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl gold-gradient-bg flex items-center justify-center text-dark-900 text-xl sm:text-2xl mb-4 sm:mb-6 shadow-lg shadow-gold-500/20">
-                        <i class="fa-solid fa-box-tissue"></i>
+                    <div id="home-product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Rendered by JS -->
                     </div>
-                    <h3 class="font-serif-title text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3">Muestras VIP a Domicilio</h3>
-                    <p class="text-gray-400 text-xs sm:text-sm leading-relaxed">Recibe en tu hogar nuestro cofre de descubrimiento con 5 elixires antes de decidir tu frasco definitivo.</p>
                 </div>
-
-                <div class="glass-card p-6 sm:p-8 rounded-2xl transition-all duration-300 hover:-translate-y-1 sm:hover:-translate-y-2 sm:col-span-2 lg:col-span-1">
-                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl gold-gradient-bg flex items-center justify-center text-dark-900 text-xl sm:text-2xl mb-4 sm:mb-6 shadow-lg shadow-gold-500/20">
-                        <i class="fa-solid fa-truck-fast"></i>
-                    </div>
-                    <h3 class="font-serif-title text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3">Envío Blindado Express</h3>
-                    <p class="text-gray-400 text-xs sm:text-sm leading-relaxed">Entregas exprés con empaque de lujo térmico y seguro total para garantizar la integridad del perfume.</p>
-                </div>
-            </div>
+            </section>
         </div>
-    </section>
+
+        <!-- PAGE 2: CATALOG PAGE -->
+        <div id="page-catalogo" class="page-section hidden">
+            <section class="py-10 bg-dark-900">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="text-center max-w-3xl mx-auto mb-8">
+                        <span class="text-gold-400 uppercase text-xs tracking-widest font-semibold">Catálogo Completo</span>
+                        <h2 class="font-serif-title text-3xl sm:text-4xl font-bold text-white mt-1 mb-3">Colección de <span class="gold-gradient-text">Alta Perfumería</span></h2>
+                        <p class="text-gray-400 text-xs sm:text-sm">Encuentra la fragancia ideal según tus acordes olfativos preferidos.</p>
+                        
+                        <div class="flex flex-wrap justify-center gap-2 sm:gap-3 mt-6">
+                            <button onclick="filterProducts('todos', event)" class="filter-btn active px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-gold-500 text-dark-900 transition-all min-h-[38px]">Todos</button>
+                            <button onclick="filterProducts('oriental', event)" class="filter-btn px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-dark-700 text-gray-300 hover:text-white transition-all min-h-[38px]">Orientales</button>
+                            <button onclick="filterProducts('floral', event)" class="filter-btn px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-dark-700 text-gray-300 hover:text-white transition-all min-h-[38px]">Florales Nobles</button>
+                            <button onclick="filterProducts('fresco', event)" class="filter-btn px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-dark-700 text-gray-300 hover:text-white transition-all min-h-[38px]">Cítricos Frescos</button>
+                        </div>
+                    </div>
+
+                    <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                        <!-- Products injected dynamically -->
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- PAGE 3: PRODUCT DETAIL PAGE -->
+        <div id="page-detalle" class="page-section hidden">
+            <section class="py-12 max-w-5xl mx-auto px-4 sm:px-6">
+                <button onclick="navigateTo('catalogo')" class="mb-6 text-xs text-gold-400 hover:underline inline-flex items-center gap-1.5 font-semibold">
+                    <i class="fa-solid fa-chevron-left"></i> Volver al Catálogo
+                </button>
+                <div id="product-detail-container">
+                    <!-- Dynamic detail rendering -->
+                </div>
+            </section>
+        </div>
+
+        <!-- PAGE 4: EXPERIENCIA VIP PAGE -->
+        <div id="page-experiencia" class="page-section hidden">
+            <section class="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-3xl mx-auto mb-10">
+                    <span class="text-gold-400 uppercase text-xs tracking-widest font-semibold">Servicios Exclusivos</span>
+                    <h2 class="font-serif-title text-3xl sm:text-4xl font-bold text-white mt-1 mb-4">La Experiencia <span class="gold-gradient-text">Leandro Morales</span></h2>
+                    <p class="text-gray-400 text-xs sm:text-base">Diseñada para apasionados de la alta perfumería de autor.</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                    <div class="glass-card p-6 sm:p-8 rounded-2xl">
+                        <div class="w-12 h-12 rounded-xl gold-gradient-bg flex items-center justify-center text-dark-900 text-xl mb-4">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        </div>
+                        <h3 class="font-serif-title text-lg font-bold text-white mb-2">Bespoke Perfumery</h3>
+                        <p class="text-gray-400 text-xs leading-relaxed">Creación de fragancias exclusivas y personalizadas adaptadas a la química de tu piel y preferencias olfativas.</p>
+                    </div>
+
+                    <div class="glass-card p-6 sm:p-8 rounded-2xl">
+                        <div class="w-12 h-12 rounded-xl gold-gradient-bg flex items-center justify-center text-dark-900 text-xl mb-4">
+                            <i class="fa-solid fa-box-tissue"></i>
+                        </div>
+                        <h3 class="font-serif-title text-lg font-bold text-white mb-2">Cofre Discovery VIP</h3>
+                        <p class="text-gray-400 text-xs leading-relaxed">Recibe en tu hogar nuestro cofre con muestras de 5 elixires de la colección antes de definir tu frasco final.</p>
+                    </div>
+
+                    <div class="glass-card p-6 sm:p-8 rounded-2xl">
+                        <div class="w-12 h-12 rounded-xl gold-gradient-bg flex items-center justify-center text-dark-900 text-xl mb-4">
+                            <i class="fa-solid fa-truck-fast"></i>
+                        </div>
+                        <h3 class="font-serif-title text-lg font-bold text-white mb-2">Envío Especial Asegurado</h3>
+                        <p class="text-gray-400 text-xs leading-relaxed">Entregas con empaque de lujo térmico y protección para asegurar la perfecta conservación del extracto.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- PAGE 5: CONTACT PAGE -->
+        <div id="page-contacto" class="page-section hidden">
+            <section class="py-12 max-w-4xl mx-auto px-4 sm:px-6">
+                <div class="glass-card p-6 sm:p-10 rounded-2xl border border-gold-500/30">
+                    <h2 class="font-serif-title text-2xl sm:text-3xl font-bold text-white text-center mb-2">Atención & Asesoramiento</h2>
+                    <p class="text-xs sm:text-sm text-gray-400 text-center mb-8">Déjanos tus consultas para ser atendido por un perfumista de nuestro atelier.</p>
+                    
+                    <form onsubmit="handleContactSubmit(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <input type="text" placeholder="Tu Nombre Completo" required class="bg-dark-900 border border-dark-600 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-gold-400">
+                            <input type="tel" placeholder="Tu Teléfono / WhatsApp" required class="bg-dark-900 border border-dark-600 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-gold-400">
+                        </div>
+                        <input type="email" placeholder="Correo Electrónico" required class="w-full bg-dark-900 border border-dark-600 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-gold-400">
+                        <textarea placeholder="¿En qué fragancia o servicio estás interesado?" rows="4" required class="w-full bg-dark-900 border border-dark-600 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-gold-400"></textarea>
+                        <button type="submit" class="w-full gold-gradient-bg text-dark-900 font-bold py-3.5 rounded-xl uppercase text-xs tracking-wider hover:opacity-95 transition-all">
+                            Enviar Consulta Directa
+                        </button>
+                    </form>
+                </div>
+            </section>
+        </div>
+
+    </main>
 
     <!-- FOOTER SECTION -->
     <footer id="contacto" class="bg-dark-900 border-t border-dark-700 pt-12 sm:pt-16 pb-8">
@@ -492,9 +559,54 @@
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
+        // DEFAULT PERFUMES INITIALIZATION
         const defaultPerfumes = [
             {
-                id: "1",
+                id: '1',
+                name: "Ébano & Amber Royal",
+                category: "oriental",
+                price: 185,
+                family: "Oud & Ámbar Creador",
+                badge: "Best Seller",
+                rating: "4.9",
+                img: "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=800&auto=format&fit=crop",
+                desc: "Una composición opulenta dominada por el ámbar resinoso, madera de ébano ahumada y acordes de vainilla negra madurada en barricas de roble."
+            },
+            {
+                id: '2',
+                name: "Rose de Nuit Privée",
+                category: "floral",
+                price: 160,
+                family: "Floral Especiado",
+                badge: "Edición Limitada",
+                rating: "4.8",
+                img: "https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?q=80&w=800&auto=format&fit=crop",
+                desc: "Rosas de Grasse cosechadas al amanecer, envueltas en un velo especiado de azafrán, pimienta rosa y pachulí aterciopelado."
+            },
+            {
+                id: '3',
+                name: "Citrus Absolu & Vetiver",
+                category: "fresco",
+                price: 145,
+                family: "Cítrico Amaderado",
+                badge: "Novedad",
+                rating: "4.7",
+                img: "https://images.unsplash.com/photo-1523293182086-7651a899d37f?q=80&w=800&auto=format&fit=crop",
+                desc: "Frescura efervescente de bergamota de Calabria combinada con notas terrestres de vetiver de Haití y cedro blanco."
+            },
+            {
+                id: '4',
+                name: "Santal Impérial & Cuir",
+                category: "oriental",
+                price: 195,
+                family: "Madera & Cuero",
+                badge: "VIP Exclusivo",
+                rating: "5.0",
+                img: "https://images.unsplash.com/photo-1547887537-6158d64c35b3?q=80&w=800&auto=format&fit=crop",
+                desc: "Sándalo de Mysore refinado con acentos de cuero noble, cardamomo de Ceilán y un sutil matiz ahumado."
+            },
+            {
+                 id: "1",
                 name: "9AM DIVE-AFNAN-100ml",
                 category: "Perfume Árabe",
                 family: "Perfume Árabe",
@@ -573,7 +685,7 @@
                 des: "Amber Oud Dubai Night de Al Haramain Perfumes es una fragancia de la familia olfativa Oriental Amaderada para Hombres. Esta fragrancia es nueva. Amber Oud Dubai Night se lanzó en 2024. Las Notas de Salida son azafrán, bergamota y elemí; las Notas de Corazón son madera de oud, rosa de Bulgaria (rosa Damascena de Bulgaria) y lirio de los valles (muguete); las Notas de Fondo son haba tonka, ámbar, almizcle blanco y musgo de roble.",
             
               },
-                ];
+        ];
 
         let perfumes = [...defaultPerfumes];
         let cart = [];
@@ -581,374 +693,172 @@
         let uploadedImageBase64 = "";
         window.currentFilter = 'todos';
 
-        function showNotification(msg, isError = false) {
-            const toast = document.getElementById('toast-msg');
-            const toastText = document.getElementById('toast-text');
-            const toastIcon = document.getElementById('toast-icon');
-
-            if (!toast || !toastText) return;
-
-            toastText.innerText = msg;
-            if (isError) {
-                toast.classList.remove('border-gold-500/40');
-                toast.classList.add('border-red-500');
-                toastIcon.className = 'fa-solid fa-circle-xmark text-red-400 text-lg';
-            } else {
-                toast.classList.remove('border-red-500');
-                toast.classList.add('border-gold-500/40');
-                toastIcon.className = 'fa-solid fa-circle-check text-gold-400 text-lg';
+        // NAVIGATION / PAGE ROUTER LOGIC
+        window.navigateTo = function(pageId, productId = null) {
+            document.querySelectorAll('.page-section').forEach(sec => sec.classList.add('hidden'));
+            
+            const targetPage = document.getElementById(`page-${pageId}`);
+            if (targetPage) {
+                targetPage.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
-            toast.classList.remove('translate-y-20', 'opacity-0');
-
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 4000);
-        }
-
-        window.openAdminLoginModal = function() {
-            const modal = document.getElementById('admin-login-modal');
-            const input = document.getElementById('admin-password-input');
-            if (modal) {
-                modal.classList.remove('opacity-0', 'pointer-events-none');
+            if (pageId === 'detalle' && productId) {
+                renderProductDetail(productId);
             }
-            if (input) {
-                input.value = '';
-                setTimeout(() => input.focus(), 100);
+
+            if (pageId === 'home') {
+                renderHomeProducts();
             }
         };
 
-        window.closeAdminLoginModal = function() {
-            const modal = document.getElementById('admin-login-modal');
-            if (modal) {
-                modal.classList.add('opacity-0', 'pointer-events-none');
-            }
-        };
+        function renderProducts(category = 'todos') {
+            const grid = document.getElementById('product-grid');
+            if (!grid) return;
 
-        window.verifyAdminPassword = function(e) {
-            e.preventDefault();
-            const input = document.getElementById('admin-password-input');
-            const password = input ? input.value : '';
+            const filtered = category === 'todos' 
+                ? perfumes 
+                : perfumes.filter(p => p.category === category);
 
-            if (password === "bsl22") {
-                closeAdminLoginModal();
-                window.openAdminPanel();
-                showNotification("Acceso concedido al Panel de Administración");
-            } else {
-                showNotification("Clave incorrecta", true);
-                if (input) {
-                    input.value = '';
-                    input.focus();
-                }
-            }
-        };
-
-        window.openAdminPanel = function() {
-            const modal = document.getElementById('admin-modal');
-            if (modal) {
-                modal.classList.remove('opacity-0', 'pointer-events-none');
-                populateOrderPerfumesSelect();
-                renderOrders();
-            }
-        };
-
-        window.closeAdminPanel = function() {
-            const modal = document.getElementById('admin-modal');
-            if (modal) {
-                modal.classList.add('opacity-0', 'pointer-events-none');
-            }
-        };
-
-        function populateOrderPerfumesSelect() {
-            const select = document.getElementById('order-perfume-select');
-            if (!select) return;
-            select.innerHTML = perfumes.map(p => `<option value="${p.id}">${p.name} ($${p.price})</option>`).join('');
-        }
-
-        async function addNewOrder(e) {
-            e.preventDefault();
-            const clientName = document.getElementById('order-client-name').value.trim();
-            const clientPhone = document.getElementById('order-client-phone').value.trim();
-            const perfumeId = document.getElementById('order-perfume-select').value;
-            const qty = parseInt(document.getElementById('order-qty').value) || 1;
-            const status = document.getElementById('order-status').value;
-            const address = document.getElementById('order-address').value.trim();
-
-            const perfume = perfumes.find(p => String(p.id) === String(perfumeId));
-            if (!perfume) {
-                showNotification("Selecciona un perfume válido", true);
-                return;
-            }
-
-            const total = perfume.price * qty;
-            const id = String(Date.now());
-            const newOrder = {
-                id,
-                clientName,
-                clientPhone,
-                perfumeName: perfume.name,
-                qty,
-                total,
-                status,
-                address,
-                date: new Date().toLocaleDateString()
-            };
-
-            let saved = false;
-            if (window.db && window.setDoc && window.doc) {
-                try {
-                    await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'orders', id), newOrder);
-                    saved = true;
-                } catch (err) {
-                    console.warn("Fallo al guardar pedido en la nube:", err);
-                }
-            }
-
-            if (!saved) {
-                orders.unshift(newOrder);
-                renderOrders();
-            }
-
-            e.target.reset();
-            showNotification("¡Pedido registrado exitosamente!");
-        }
-
-        async function deleteOrder(id) {
-            try {
-                if (window.db && window.deleteDoc && window.doc) {
-                    await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'orders', String(id)));
-                } else {
-                    orders = orders.filter(o => String(o.id) !== String(id));
-                    renderOrders();
-                }
-                showNotification("Pedido eliminado");
-            } catch (err) {
-                showNotification("Error al eliminar pedido", true);
-            }
-        }
-
-        function renderOrders() {
-            const container = document.getElementById('orders-list-container');
-            if (!container) return;
-
-            if (orders.length === 0) {
-                container.innerHTML = '<p class="text-xs text-gray-500 py-3 text-center">No hay pedidos registrados.</p>';
-                return;
-            }
-
-            container.innerHTML = orders.map(o => `
-                <div class="bg-dark-900 p-3 rounded-lg border border-dark-700 flex justify-between items-center text-xs">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-white">${o.clientName}</span>
-                            <span class="text-[10px] px-2 py-0.5 rounded-full ${o.status === 'Completado' ? 'bg-green-500/20 text-green-400' : 'bg-gold-500/20 text-gold-400'}">${o.status}</span>
-                        </div>
-                        <p class="text-gray-400 text-[11px]">${o.perfumeName} x${o.qty} — <span class="text-gold-400 font-semibold">$${o.total}</span></p>
-                        <p class="text-[10px] text-gray-500"><i class="fa-solid fa-phone text-[9px]"></i> ${o.clientPhone} ${o.address ? ' | ' + o.address : ''}</p>
+            grid.innerHTML = filtered.map(p => `
+                <div class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] relative group">
+                    <div class="relative aspect-square overflow-hidden bg-dark-900 cursor-pointer" onclick="navigateTo('detalle', '${p.id}')">
+                        <img src="${p.img}" alt="${p.name}" class="w-full h-full object-cover transition-transform duration-500 hover:scale-110">
+                        <span class="absolute top-3 left-3 bg-gold-500/90 text-dark-900 text-[9px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">${p.badge || 'Autor'}</span>
                     </div>
-                    <button onclick="deleteOrder('${o.id}')" class="text-red-400 hover:text-red-300 p-1.5" title="Eliminar pedido">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
+                    <div class="p-5 flex flex-col justify-between flex-1">
+                        <div>
+                            <p class="text-[9px] uppercase tracking-widest text-gold-400 font-semibold mb-1">${p.family}</p>
+                            <h3 class="font-serif-title text-lg font-bold text-white mb-2 cursor-pointer hover:text-gold-400" onclick="navigateTo('detalle', '${p.id}')">${p.name}</h3>
+                            <p class="text-xs text-gray-400 line-clamp-2 mb-4 font-light">${p.desc}</p>
+                        </div>
+                        <div class="flex items-center justify-between pt-3 border-t border-dark-700 mt-2">
+                            <span class="text-lg font-bold gold-gradient-text">$${p.price}</span>
+                            <button onclick="addToCart('${p.id}')" class="gold-gradient-bg text-dark-900 px-4 py-2 rounded-lg text-xs font-bold hover:opacity-90 transition-all flex items-center gap-1.5">
+                                <i class="fa-solid fa-plus"></i> Añadir
+                            </button>
+                        </div>
+                    </div>
                 </div>
             `).join('');
         }
 
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            const labelText = document.getElementById('file-label-text');
-            if (file) {
-                if (labelText) labelText.innerText = file.name;
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        const MAX_WIDTH = 600;
-                        const scaleSize = MAX_WIDTH / img.width;
-                        if (scaleSize < 1) {
-                            canvas.width = MAX_WIDTH;
-                            canvas.height = img.height * scaleSize;
-                        } else {
-                            canvas.width = img.width;
-                            canvas.height = img.height;
-                        }
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        uploadedImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        async function addNewProduct(e) {
-            e.preventDefault();
-            const submitBtn = document.getElementById('prod-submit-btn');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerText = "Publicando...";
-            }
-
-            try {
-                const name = document.getElementById('prod-name').value.trim();
-                const category = document.getElementById('prod-category').value;
-                const price = parseFloat(document.getElementById('prod-price').value) || 0;
-                const family = document.getElementById('prod-family').value.trim();
-                const urlImg = document.getElementById('prod-img').value.trim();
-                const desc = document.getElementById('prod-desc').value.trim();
-
-                if (!name || !desc || !family || price <= 0) {
-                    showNotification("Por favor completa todos los campos requeridos.", true);
-                    return;
-                }
-
-                const img = uploadedImageBase64 || urlImg || "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=800&auto=format&fit=crop";
-                const id = String(Date.now());
-                const rating = "5.0";
-                const badge = "Edición Limitada";
-
-                const newPerfume = { id, name, category, family, rating, badge, price, img, desc };
-
-                let savedInCloud = false;
-                if (window.db && window.setDoc && window.doc) {
-                    try {
-                        await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'perfumes', id), newPerfume);
-                        savedInCloud = true;
-                    } catch (cloudErr) {
-                        console.warn("No se pudo guardar en la nube, usando almacenamiento local:", cloudErr);
-                    }
-                }
-
-                if (!savedInCloud) {
-                    perfumes.unshift(newPerfume);
-                    renderProducts(window.currentFilter || 'todos');
-                    populateOrderPerfumesSelect();
-                }
-
-                e.target.reset();
-                uploadedImageBase64 = "";
-                const labelText = document.getElementById('file-label-text');
-                if (labelText) labelText.innerText = "Subir desde tu equipo";
-
-                closeAdminPanel();
-                showNotification('¡Nuevo perfume publicado con éxito!');
-            } catch (err) {
-                console.error("Error al publicar perfume:", err);
-                showNotification("Error al guardar perfume", true);
-            } finally {
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerText = "Publicar Perfume";
-                }
-            }
-        }
-
-        async function deleteProduct(id) {
-            try {
-                if (window.db && window.deleteDoc && window.doc) {
-                    await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'perfumes', String(id)));
-                    await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'cart', String(id)));
-                } else {
-                    perfumes = perfumes.filter(p => String(p.id) !== String(id));
-                    cart = cart.filter(p => String(p.id) !== String(id));
-                    renderProducts(window.currentFilter || 'todos');
-                    populateOrderPerfumesSelect();
-                    renderCart();
-                }
-                showNotification('Perfume eliminado');
-            } catch (err) {
-                console.error("Error al eliminar producto:", err);
-                showNotification('Error al eliminar perfume', true);
-            }
-        }
-
-        function closeMobileMenu() {
-            const mobileMenu = document.getElementById('mobile-menu');
-            if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
-                mobileMenu.classList.add('hidden');
-            }
-        }
-
-        function renderProducts(filter = 'todos') {
-            window.currentFilter = filter;
-            const grid = document.getElementById('product-grid');
-            if (!grid) return;
-
-            grid.innerHTML = '';
-            const filtered = filter === 'todos' ? perfumes : perfumes.filter(p => p.category === filter);
-
-            if (filtered.length === 0) {
-                grid.innerHTML = '<p class="col-span-full text-center text-gray-400 py-12">No hay perfumes disponibles en esta categoría.</p>';
-                return;
-            }
-
-            filtered.forEach(p => {
-                grid.innerHTML += `
-                    <div class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] relative group">
-                        <button onclick="deleteProduct('${p.id}')" title="Eliminar producto" aria-label="Eliminar perfume" class="absolute top-3 right-3 bg-red-600/80 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-xs opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-lg">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                        <div class="relative aspect-square overflow-hidden bg-dark-900">
-                            <img src="${p.img}" alt="${p.name}" class="w-full h-full object-cover transition-transform duration-500 hover:scale-110">
-                            <span class="absolute top-3 left-3 bg-gold-500/90 text-dark-900 text-[9px] sm:text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">${p.badge}</span>
-                            <div class="absolute bottom-3 right-3 bg-dark-900/80 text-gold-400 px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 border border-gold-500/30">
-                                <i class="fa-solid fa-star text-gold-400"></i> ${p.rating}
-                            </div>
-                        </div>
-                        <div class="p-4 sm:p-6 flex flex-col justify-between flex-1">
-                            <div>
-                                <p class="text-[9px] sm:text-[10px] uppercase tracking-widest text-gold-400 font-semibold mb-1">${p.family}</p>
-                                <h3 class="font-serif-title text-lg sm:text-xl font-bold text-white mb-2">${p.name}</h3>
-                                <p class="text-xs text-gray-400 leading-relaxed mb-4">${p.desc}</p>
-                            </div>
-                            <div class="flex items-center justify-between pt-3 sm:pt-4 border-t border-dark-700">
-                                <span class="text-lg sm:text-xl font-bold gold-gradient-text">$${p.price}</span>
-                                <button onclick="addToCart('${p.id}')" class="gold-gradient-bg text-dark-900 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold hover:opacity-90 transition-all flex items-center gap-1 min-h-[36px]">
-                                    <i class="fa-solid fa-plus"></i> Añadir
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function filterProducts(cat, e) {
+        function filterProducts(cat, event) {
+            window.currentFilter = cat;
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.classList.remove('bg-gold-500', 'text-dark-900');
                 btn.classList.add('bg-dark-700', 'text-gray-300');
             });
-            if (e && e.target) {
-                e.target.classList.remove('bg-dark-700', 'text-gray-300');
-                e.target.classList.add('bg-gold-500', 'text-dark-900');
+            if (event && event.target) {
+                event.target.classList.remove('bg-dark-700', 'text-gray-300');
+                event.target.classList.add('bg-gold-500', 'text-dark-900');
             }
             renderProducts(cat);
         }
 
+        function renderHomeProducts() {
+            const grid = document.getElementById('home-product-grid');
+            if (!grid) return;
+            grid.innerHTML = perfumes.slice(0, 3).map(p => `
+                <div class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] relative group">
+                    <div class="relative aspect-square overflow-hidden bg-dark-900 cursor-pointer" onclick="navigateTo('detalle', '${p.id}')">
+                        <img src="${p.img}" alt="${p.name}" class="w-full h-full object-cover transition-transform duration-500 hover:scale-110">
+                        <span class="absolute top-3 left-3 bg-gold-500/90 text-dark-900 text-[9px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">${p.badge || 'Autor'}</span>
+                    </div>
+                    <div class="p-4 flex flex-col justify-between flex-1">
+                        <div>
+                            <p class="text-[9px] uppercase tracking-widest text-gold-400 font-semibold mb-1">${p.family}</p>
+                            <h3 class="font-serif-title text-base font-bold text-white mb-1 cursor-pointer hover:text-gold-400" onclick="navigateTo('detalle', '${p.id}')">${p.name}</h3>
+                        </div>
+                        <div class="flex items-center justify-between pt-3 border-t border-dark-700 mt-2">
+                            <span class="text-base font-bold gold-gradient-text">$${p.price}</span>
+                            <button onclick="addToCart('${p.id}')" class="gold-gradient-bg text-dark-900 px-3 py-1.5 rounded-lg text-xs font-bold hover:opacity-90 transition-all flex items-center gap-1">
+                                <i class="fa-solid fa-plus"></i> Añadir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderProductDetail(id) {
+            const container = document.getElementById('product-detail-container');
+            const product = perfumes.find(p => String(p.id) === String(id));
+            if (!container || !product) return;
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 glass-card p-6 sm:p-8 rounded-2xl">
+                    <div class="aspect-square rounded-xl overflow-hidden bg-dark-900">
+                        <img src="${product.img}" alt="${product.name}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex flex-col justify-between space-y-4">
+                        <div>
+                            <span class="bg-gold-500/20 text-gold-400 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">${product.badge || 'Autor'}</span>
+                            <h1 class="font-serif-title text-2xl sm:text-4xl font-bold text-white mt-2">${product.name}</h1>
+                            <p class="text-xs text-gold-400 font-semibold mt-1">${product.family}</p>
+                            <p class="text-sm text-gray-300 leading-relaxed mt-4">${product.desc}</p>
+                        </div>
+                        <div class="pt-4 border-t border-dark-700 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-2xl font-bold gold-gradient-text">$${product.price}</span>
+                                <span class="text-xs text-gray-400"><i class="fa-solid fa-star text-gold-400"></i> ${product.rating || '5.0'} / 5.0</span>
+                            </div>
+                            <button onclick="addToCart('${product.id}')" class="w-full gold-gradient-bg text-dark-900 font-bold py-3.5 rounded-xl uppercase text-xs tracking-wider flex items-center justify-center gap-2 hover:opacity-95 transition-all">
+                                <i class="fa-solid fa-cart-shopping"></i> Añadir Perfume al Carrito
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.handleContactSubmit = function(e) {
+            e.preventDefault();
+            showNotification("¡Gracias por contactarte! Un asesor responderá tu consulta.");
+            e.target.reset();
+        };
+
+        // ADD TO CART
         async function addToCart(id) {
             const product = perfumes.find(p => String(p.id) === String(id));
             if (!product) return;
             
-            const existing = cart.find(item => String(item.id) === String(id));
-            const newQty = existing ? existing.qty + 1 : 1;
+            const existingIndex = cart.findIndex(item => String(item.id) === String(id));
+            let newQty = 1;
 
-            try {
-                await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'cart', String(id)), {
-                    ...product,
-                    qty: newQty
-                });
-                toggleCartModal(true);
-            } catch (err) {
-                console.error("Error al agregar al carrito en la nube:", err);
+            if (existingIndex > -1) {
+                cart[existingIndex].qty += 1;
+                newQty = cart[existingIndex].qty;
+            } else {
+                cart.push({ ...product, qty: 1 });
+            }
+
+            renderCart();
+            showNotification(`¡${product.name} añadido al carrito!`);
+            toggleCartModal(true);
+
+            if (window.db && window.setDoc && window.doc) {
+                try {
+                    await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'cart', String(id)), {
+                        ...product,
+                        qty: newQty
+                    });
+                } catch (err) {
+                    console.warn("Actualizando carrito localmente por fallback:", err);
+                }
             }
         }
 
         async function removeFromCart(id) {
-            try {
-                await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'cart', String(id)));
-            } catch (err) {
-                console.error("Error al eliminar del carrito en la nube:", err);
+            cart = cart.filter(item => String(item.id) !== String(id));
+            renderCart();
+
+            if (window.db && window.deleteDoc && window.doc) {
+                try {
+                    await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'cart', String(id)));
+                } catch (err) {
+                    console.warn("Fallo secundario al eliminar de la nube:", err);
+                }
             }
         }
 
@@ -992,58 +902,238 @@
             if (mobileBadge) mobileBadge.innerText = count;
         }
 
-        function toggleCartModal(openOnly = false) {
+        function toggleCartModal(openForce = null) {
             const modal = document.getElementById('cart-modal');
             if (!modal) return;
-            if (openOnly) {
+            if (openForce === true) {
                 modal.classList.remove('opacity-0', 'pointer-events-none');
+            } else if (openForce === false) {
+                modal.classList.add('opacity-0', 'pointer-events-none');
             } else {
                 modal.classList.toggle('opacity-0');
                 modal.classList.toggle('pointer-events-none');
             }
         }
 
-        async function confirmOrder() {
+        function confirmOrder() {
             if (cart.length === 0) {
-                showNotification('Añade al menos un perfume al carrito para realizar el pedido.', true);
+                showNotification("Tu carrito está vacío.");
                 return;
             }
 
+            let msg = "¡Hola Leandro Morales Perfumería! Quisiera realizar el siguiente pedido:%0A%0A";
             let total = 0;
-            let itemsText = "";
-
             cart.forEach(item => {
                 const subtotal = item.price * item.qty;
                 total += subtotal;
-                itemsText += `• *${item.name}* x${item.qty} - $${subtotal}\n`;
+                msg += `• *${item.name}* (${item.qty}x) - $${subtotal}%0A`;
             });
+            msg += `%0A*Total final:* $${total}%0A%0AQuedo a la espera de la confirmación. ¡Muchas gracias!`;
 
-            const message = `*¡Hola! Quiero finalizar mi pedido en Leandro Morales Perfumería:*\n\n${itemsText}\n*Total:* $${total}\n\nQuedo a la espera de sus instrucciones para realizar el pago y envío.`;
-
-            const phone = "5492615960049";
-            const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-
-            // Vaciar el carrito en la nube
-            if (window.db && window.deleteDoc && window.doc) {
-                for (const item of cart) {
-                    try {
-                        await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'cart', String(item.id)));
-                    } catch (e) {
-                        console.error(e);
-                    }
-                }
-            }
-            cart = [];
-            renderCart();
-
-            toggleCartModal();
-
-            // Abrir WhatsApp
-            window.open(whatsappUrl, '_blank');
+            window.open(`https://wa.me/5492615960049?text=${msg}`, '_blank');
         }
 
+        // ADMIN LOGIN & CONTROLS
+        function openAdminLoginModal() {
+            const modal = document.getElementById('admin-login-modal');
+            if (modal) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+            }
+        }
+
+        function closeAdminLoginModal() {
+            const modal = document.getElementById('admin-login-modal');
+            if (modal) {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+            }
+        }
+
+        function verifyAdminPassword(e) {
+            e.preventDefault();
+            const passwordInput = document.getElementById('admin-password-input');
+            if (passwordInput && passwordInput.value === 'bsl22') {
+                closeAdminLoginModal();
+                passwordInput.value = '';
+                openAdminPanel();
+            } else {
+                showNotification("Clave incorrecta. Intente nuevamente.");
+            }
+        }
+
+        function openAdminPanel() {
+            const modal = document.getElementById('admin-modal');
+            if (modal) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+            }
+        }
+
+        function closeAdminPanel() {
+            const modal = document.getElementById('admin-modal');
+            if (modal) {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+            }
+        }
+
+        function closeMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenu) {
+                mobileMenu.classList.add('hidden');
+            }
+        }
+
+        // FILE SELECTION
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            const labelText = document.getElementById('file-label-text');
+            if (!file) return;
+
+            if (labelText) labelText.innerText = file.name;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                uploadedImageBase64 = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ADD NEW PRODUCT
+        async function addNewProduct(e) {
+            e.preventDefault();
+            const submitBtn = document.getElementById('prod-submit-btn');
+            if (submitBtn) submitBtn.disabled = true;
+
+            const name = document.getElementById('prod-name').value.trim();
+            const category = document.getElementById('prod-category').value;
+            const price = parseFloat(document.getElementById('prod-price').value);
+            const family = document.getElementById('prod-family').value.trim();
+            const urlImg = document.getElementById('prod-img').value.trim();
+            const desc = document.getElementById('prod-desc').value.trim();
+
+            const img = uploadedImageBase64 || urlImg || 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=800&auto=format&fit=crop';
+            const newId = String(Date.now());
+
+            const newPerfume = {
+                id: newId,
+                name,
+                category,
+                price,
+                family,
+                badge: "Nuevo",
+                rating: "5.0",
+                img,
+                desc
+            };
+
+            perfumes.push(newPerfume);
+            renderProducts(window.currentFilter || 'todos');
+            renderHomeProducts();
+            populateOrderPerfumesSelect();
+
+            if (window.db && window.setDoc && window.doc) {
+                try {
+                    await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'perfumes', newId), newPerfume);
+                } catch (err) {
+                    console.warn("Error secundario al guardar perfume en la nube:", err);
+                }
+            }
+
+            showNotification("¡Perfume publicado exitosamente!");
+            e.target.reset();
+            uploadedImageBase64 = "";
+            const labelText = document.getElementById('file-label-text');
+            if (labelText) labelText.innerText = "Subir desde tu equipo";
+
+            if (submitBtn) submitBtn.disabled = false;
+        }
+
+        // ORDERS ADMIN
+        function populateOrderPerfumesSelect() {
+            const select = document.getElementById('order-perfume-select');
+            if (!select) return;
+
+            select.innerHTML = perfumes.map(p => `
+                <option value="${p.id}">${p.name} ($${p.price})</option>
+            `).join('');
+        }
+
+        async function addNewOrder(e) {
+            e.preventDefault();
+            const clientName = document.getElementById('order-client-name').value.trim();
+            const clientPhone = document.getElementById('order-client-phone').value.trim();
+            const perfumeId = document.getElementById('order-perfume-select').value;
+            const qty = parseInt(document.getElementById('order-qty').value, 10);
+            const status = document.getElementById('order-status').value;
+            const address = document.getElementById('order-address').value.trim();
+
+            const perfume = perfumes.find(p => String(p.id) === String(perfumeId));
+            if (!perfume) return;
+
+            const newOrder = {
+                id: String(Date.now()),
+                clientName,
+                clientPhone,
+                perfumeName: perfume.name,
+                perfumePrice: perfume.price,
+                qty,
+                total: perfume.price * qty,
+                status,
+                address,
+                date: new Date().toLocaleDateString('es-AR')
+            };
+
+            orders.push(newOrder);
+            renderOrders();
+
+            if (window.db && window.setDoc && window.doc) {
+                try {
+                    await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'orders', newOrder.id), newOrder);
+                } catch (err) {
+                    console.warn("Error al guardar pedido en nube:", err);
+                }
+            }
+
+            showNotification("Pedido registrado exitosamente");
+            e.target.reset();
+        }
+
+        function renderOrders() {
+            const container = document.getElementById('orders-list-container');
+            if (!container) return;
+
+            if (orders.length === 0) {
+                container.innerHTML = '<p class="text-xs text-gray-500 py-2">Sin pedidos registrados aún.</p>';
+                return;
+            }
+
+            container.innerHTML = orders.map(o => `
+                <div class="bg-dark-900 p-2.5 rounded-lg border border-dark-700 flex justify-between items-center text-xs">
+                    <div>
+                        <p class="font-bold text-white">${o.clientName} (${o.clientPhone})</p>
+                        <p class="text-[10px] text-gray-400">${o.perfumeName} x${o.qty} - <span class="text-gold-400">$${o.total}</span></p>
+                    </div>
+                    <span class="px-2 py-0.5 rounded text-[9px] font-bold ${o.status === 'Completado' ? 'bg-green-500/20 text-green-400' : 'bg-gold-500/20 text-gold-400'}">${o.status}</span>
+                </div>
+            `).join('');
+        }
+
+        // TOAST NOTIFICATIONS
+        function showNotification(msg) {
+            const toast = document.getElementById('toast-msg');
+            const text = document.getElementById('toast-text');
+            if (!toast || !text) return;
+
+            text.innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // DOM READY SETUP
         document.addEventListener('DOMContentLoaded', () => {
             renderProducts(window.currentFilter || 'todos');
+            renderHomeProducts();
             populateOrderPerfumesSelect();
 
             if (window.initCloudSync) {
