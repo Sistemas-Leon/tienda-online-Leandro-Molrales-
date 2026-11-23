@@ -236,11 +236,11 @@
 
                         <div class="relative flex justify-center mt-4 md:mt-0">
                             <div class="relative w-full max-w-xs sm:max-w-md aspect-square rounded-2xl sm:rounded-3xl overflow-hidden glass-card p-3 sm:p-4">
-                                <img src="https://dcdn-us.mitiendanube.com/stores/007/486/062/categories/screenshot_20260409_001636_samsung-internet-c863b9595acc300a4817800218726678-1920-1920.jpg" class="w-full h-full object-cover rounded-xl sm:rounded-2xl shadow-2xl">
+                                <img src="https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=800&auto=format&fit=crop" alt="Perfume Luxury Aura" class="w-full h-full object-cover rounded-xl sm:rounded-2xl shadow-2xl">
                                 <div class="absolute bottom-4 left-4 right-4 sm:bottom-8 sm:left-8 sm:right-8 p-3 sm:p-4 rounded-xl glass-card border border-gold-500/30 backdrop-blur-md">
                                     <p class="text-[10px] sm:text-xs uppercase tracking-widest text-gold-400 font-semibold">Fragancia Destacada</p>
-                                    <p class="font-serif-title text-base sm:text-lg font-bold text-white">Perfúmes árabes</p>
-                                    <p class="text-[11px] sm:text-xs text-gray-300">20% descuento comprando 10 unidades</p>
+                                    <p class="font-serif-title text-base sm:text-lg font-bold text-white">Ébano & Amber Royal</p>
+                                    <p class="text-[11px] sm:text-xs text-gray-300">Notas de Ámbar, Oud Dorado & Cardamomo</p>
                                 </div>
                             </div>
                         </div>
@@ -278,9 +278,9 @@
                         
                         <div class="flex flex-wrap justify-center gap-2 sm:gap-3 mt-6">
                             <button onclick="filterProducts('todos', event)" class="filter-btn active px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-gold-500 text-dark-900 transition-all min-h-[38px]">Todos</button>
-                            <button onclick="filterProducts('oriental', event)" class="filter-btn px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-dark-700 text-gray-300 hover:text-white transition-all min-h-[38px]">Orientales</button>
-                            <button onclick="filterProducts('floral', event)" class="filter-btn px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-dark-700 text-gray-300 hover:text-white transition-all min-h-[38px]">Florales Nobles</button>
-                            <button onclick="filterProducts('fresco', event)" class="filter-btn px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-dark-700 text-gray-300 hover:text-white transition-all min-h-[38px]">Cítricos Frescos</button>
+                            <button onclick="filterProducts('perfumes-arabes', event)" class="filter-btn px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-dark-700 text-gray-300 hover:text-white transition-all min-h-[38px]">Perfumes árabes</button>
+                            <button onclick="filterProducts('tubos-arabes', event)" class="filter-btn px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-dark-700 text-gray-300 hover:text-white transition-all min-h-[38px]">Tubos árabes</button>
+                            <button onclick="filterProducts('extractos-60ml', event)" class="filter-btn px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium bg-dark-700 text-gray-300 hover:text-white transition-all min-h-[38px]">Extractos concentrados 60ml</button>
                         </div>
                     </div>
 
@@ -462,9 +462,9 @@
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <select id="prod-category" class="bg-dark-900 border border-dark-600 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-gold-400">
-                                <option value="oriental">Oriental</option>
-                                <option value="floral">Floral</option>
-                                <option value="fresco">Fresco</option>
+                                <option value="perfumes-arabes">Perfumes árabes</option>
+                                <option value="tubos-arabes">Tubos árabes</option>
+                                <option value="extractos-60ml">Extractos concentrados 60ml</option>
                             </select>
                             <input type="number" step="0.01" id="prod-price" placeholder="Precio ($)" required class="bg-dark-900 border border-dark-600 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-gold-400">
                         </div>
@@ -561,7 +561,8 @@
     <script>
         // DEFAULT PERFUMES INITIALIZATION
         const defaultPerfumes = [
-            {
+            
+          {
                 id: "1",
                 name: "9AM DIVE-AFNAN-100ml",
                 category: "Perfume Árabe",
@@ -1687,8 +1688,9 @@
                 price: 18000,
                 img: "https://dcdn-us.mitiendanube.com/stores/007/486/062/products/lv_0_20260602193336-8a3ec79c6e2093879017912139456571-1024-1024.webp",
                 des: "EXTRACTOS CONCENTRADOS 60ML."
-              };
+              },
               ];
+
         let perfumes = [...defaultPerfumes];
         let cart = [];
         let orders = [];
